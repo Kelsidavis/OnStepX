@@ -12,24 +12,33 @@
 #endif
 #endif
 
-/*
-// map the driver addresses so axis X is 0, Y is 1, Z is 2, and E0 is 3 instead of the actual...
-#define DRIVER_UART_ADDRESS_REMAP(x) (x)
+// automatic setup of serial passthrough
+#if SERIAL_B_ESP_FLASHING == ON
+  #define SERIAL_PASSTHROUGH SERIAL_B
+  #define SERIAL_PASSTHROUGH_BAUD_DEFAULT SERIAL_B_BAUD_DEFAULT
+  #define SERIAL_PASSTHROUGH_RX SERIAL_B_RX
+  #define SERIAL_PASSTHROUGH_TX SERIAL_B_TX
+  #define SERIAL_PASSTHROUGH_RXTX_SET SERIAL_B_RXTX_SET
+#endif
 
-// map the driver addresses so axis5 becomes axis3 in hardware serial mode
-#define DRIVER_UART_ADDRESS_REMAP_AXIS5
-
-// Example for a board using SoftwareSerial ports to any number of drivers
-#define SERIAL_TMC                  SoftSerial     // Use software serial with RX on M2 and TX on M3 of axis
+// default settings for any TMC UART drivers that may be present
+#if defined(STEP_DIR_TMC_UART_PRESENT)
+#ifndef SERIAL_TMC
+#define SERIAL_TMC                  SoftSerial     // Use software serial with TX on M3 (CS) of each axis
+#endif
+#ifndef SERIAL_TMC_RX_DISABLE
+#define SERIAL_TMC_RX_DISABLE       true           // Recieving data often doesn't work with software serial
+#endif
+#ifndef SERIAL_TMC_BAUD
 #define SERIAL_TMC_BAUD             115200         // Baud rate
-#define SERIAL_TMC_NO_RX                           // Recieving data doesn't work with software serial
-
-// Example for a board using one HardwareSerial port to all four drivers
-#define SERIAL_TMC                  Serial1        // Use a single hardware serial port to up to four drivers
-#define SERIAL_TMC_BAUD             500000         // Baud rate
-#define SERIAL_TMC_TX               11             // Transmit data
-#define SERIAL_TMC_RX               12             // Recieving data
-*/
+#endif
+#ifndef SERIAL_TMC_ADDRESS_MAP
+#define SERIAL_TMC_ADDRESS_MAP(x)   (0)            // driver addresses are 0 for all axes
+#endif
+#ifndef SERIAL_TMC_INVERT
+#define SERIAL_TMC_INVERT           OFF            // invert the serial interface signal logic
+#endif
+#endif
 
 // pin# for controlling the reset of W5500 so it comes up properly
 #ifndef ETHERNET_RESET_PIN
@@ -200,11 +209,11 @@
 #ifndef AXIS1_SERVO_PH2_PIN
 #define AXIS1_SERVO_PH2_PIN         OFF
 #endif
-#ifndef AXIS1_SERVO_ENC1_PIN
-#define AXIS1_SERVO_ENC1_PIN        OFF
+#ifndef AXIS1_ENCODER_A_PIN
+#define AXIS1_ENCODER_A_PIN         OFF
 #endif
-#ifndef AXIS1_SERVO_ENC2_PIN
-#define AXIS1_SERVO_ENC2_PIN        OFF
+#ifndef AXIS1_ENCODER_B_PIN
+#define AXIS1_ENCODER_B_PIN         OFF
 #endif
 #ifndef AXIS1_FAULT_PIN
 #define AXIS1_FAULT_PIN             OFF
@@ -249,11 +258,11 @@
 #ifndef AXIS2_SERVO_PH2_PIN
 #define AXIS2_SERVO_PH2_PIN         OFF
 #endif
-#ifndef AXIS2_SERVO_ENC1_PIN
-#define AXIS2_SERVO_ENC1_PIN        OFF
+#ifndef AXIS2_ENCODER_A_PIN
+#define AXIS2_ENCODER_A_PIN         OFF
 #endif
-#ifndef AXIS2_SERVO_ENC2_PIN
-#define AXIS2_SERVO_ENC2_PIN        OFF
+#ifndef AXIS2_ENCODER_B_PIN
+#define AXIS2_ENCODER_B_PIN         OFF
 #endif
 #ifndef AXIS2_FAULT_PIN
 #define AXIS2_FAULT_PIN             OFF
@@ -298,11 +307,11 @@
 #ifndef AXIS3_SERVO_PH2_PIN
 #define AXIS3_SERVO_PH2_PIN         OFF
 #endif
-#ifndef AXIS3_SERVO_ENC1_PIN
-#define AXIS3_SERVO_ENC1_PIN        OFF
+#ifndef AXIS3_ENCODER_A_PIN
+#define AXIS3_ENCODER_A_PIN         OFF
 #endif
-#ifndef AXIS3_SERVO_ENC2_PIN
-#define AXIS3_SERVO_ENC2_PIN        OFF
+#ifndef AXIS3_ENCODER_B_PIN
+#define AXIS3_ENCODER_B_PIN         OFF
 #endif
 #ifndef AXIS3_FAULT_PIN
 #define AXIS3_FAULT_PIN             OFF
@@ -347,11 +356,11 @@
 #ifndef AXIS4_SERVO_PH2_PIN
 #define AXIS4_SERVO_PH2_PIN         OFF
 #endif
-#ifndef AXIS4_SERVO_ENC1_PIN
-#define AXIS4_SERVO_ENC1_PIN        OFF
+#ifndef AXIS4_ENCODER_A_PIN
+#define AXIS4_ENCODER_A_PIN         OFF
 #endif
-#ifndef AXIS4_SERVO_ENC2_PIN
-#define AXIS4_SERVO_ENC2_PIN        OFF
+#ifndef AXIS4_ENCODER_B_PIN
+#define AXIS4_ENCODER_B_PIN         OFF
 #endif
 #ifndef AXIS4_FAULT_PIN
 #define AXIS4_FAULT_PIN             OFF
@@ -396,11 +405,11 @@
 #ifndef AXIS5_SERVO_PH2_PIN
 #define AXIS5_SERVO_PH2_PIN         OFF
 #endif
-#ifndef AXIS5_SERVO_ENC1_PIN
-#define AXIS5_SERVO_ENC1_PIN        OFF
+#ifndef AXIS5_ENCODER_A_PIN
+#define AXIS5_ENCODER_A_PIN         OFF
 #endif
-#ifndef AXIS5_SERVO_ENC2_PIN
-#define AXIS5_SERVO_ENC2_PIN        OFF
+#ifndef AXIS5_ENCODER_B_PIN
+#define AXIS5_ENCODER_B_PIN         OFF
 #endif
 #ifndef AXIS5_FAULT_PIN
 #define AXIS5_FAULT_PIN             OFF
@@ -445,11 +454,11 @@
 #ifndef AXIS6_SERVO_PH2_PIN
 #define AXIS6_SERVO_PH2_PIN         OFF
 #endif
-#ifndef AXIS6_SERVO_ENC1_PIN
-#define AXIS6_SERVO_ENC1_PIN        OFF
+#ifndef AXIS6_ENCODER_A_PIN
+#define AXIS6_ENCODER_A_PIN         OFF
 #endif
-#ifndef AXIS6_SERVO_ENC2_PIN
-#define AXIS6_SERVO_ENC2_PIN        OFF
+#ifndef AXIS6_ENCODER_B_PIN
+#define AXIS6_ENCODER_B_PIN         OFF
 #endif
 #ifndef AXIS6_FAULT_PIN
 #define AXIS6_FAULT_PIN             OFF
@@ -494,11 +503,11 @@
 #ifndef AXIS7_SERVO_PH2_PIN
 #define AXIS7_SERVO_PH2_PIN         OFF
 #endif
-#ifndef AXIS7_SERVO_ENC1_PIN
-#define AXIS7_SERVO_ENC1_PIN        OFF
+#ifndef AXIS7_ENCODER_A_PIN
+#define AXIS7_ENCODER_A_PIN         OFF
 #endif
-#ifndef AXIS7_SERVO_ENC2_PIN
-#define AXIS7_SERVO_ENC2_PIN        OFF
+#ifndef AXIS7_ENCODER_B_PIN
+#define AXIS7_ENCODER_B_PIN         OFF
 #endif
 #ifndef AXIS7_FAULT_PIN
 #define AXIS7_FAULT_PIN             OFF
@@ -543,11 +552,11 @@
 #ifndef AXIS8_SERVO_PH2_PIN
 #define AXIS8_SERVO_PH2_PIN         OFF
 #endif
-#ifndef AXIS8_SERVO_ENC1_PIN
-#define AXIS8_SERVO_ENC1_PIN        OFF
+#ifndef AXIS8_ENCODER_A_PIN
+#define AXIS8_ENCODER_A_PIN         OFF
 #endif
-#ifndef AXIS8_SERVO_ENC2_PIN
-#define AXIS8_SERVO_ENC2_PIN        OFF
+#ifndef AXIS8_ENCODER_B_PIN
+#define AXIS8_ENCODER_B_PIN         OFF
 #endif
 #ifndef AXIS8_FAULT_PIN
 #define AXIS8_FAULT_PIN             OFF
@@ -592,11 +601,11 @@
 #ifndef AXIS9_SERVO_PH2_PIN
 #define AXIS9_SERVO_PH2_PIN         OFF
 #endif
-#ifndef AXIS9_SERVO_ENC1_PIN
-#define AXIS9_SERVO_ENC1_PIN        OFF
+#ifndef AXIS9_ENCODER_A_PIN
+#define AXIS9_ENCODER_A_PIN         OFF
 #endif
-#ifndef AXIS9_SERVO_ENC2_PIN
-#define AXIS9_SERVO_ENC2_PIN        OFF
+#ifndef AXIS9_ENCODER_B_PIN
+#define AXIS9_ENCODER_B_PIN         OFF
 #endif
 #ifndef AXIS9_FAULT_PIN
 #define AXIS9_FAULT_PIN             OFF

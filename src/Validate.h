@@ -8,7 +8,7 @@
 #endif
 
 // GENERAL ---------------------------------------
-#if defined(TMC_UART_DRIVER_PRESENT) && (!defined(SERIAL_TMC) || !defined(SERIAL_TMC_BAUD))
+#if defined(STEP_DIR_TMC_UART_PRESENT) && (!defined(SERIAL_TMC) || !defined(SERIAL_TMC_BAUD))
   #error "Configuration (Config.h): This PINMAP doesn't support TMC UART mode drivers"
 #endif
 
@@ -92,7 +92,7 @@
 
 // AXIS1 RA/AZM
 #if AXIS1_DRIVER_MODEL != OFF && \
-    (AXIS1_DRIVER_MODEL < DRIVER_FIRST || AXIS1_DRIVER_MODEL > DRIVER_LAST) && \
+    (AXIS1_DRIVER_MODEL < STEP_DIR_DRIVER_FIRST || AXIS1_DRIVER_MODEL > STEP_DIR_DRIVER_LAST) && \
     (AXIS1_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS1_DRIVER_MODEL > SERVO_DRIVER_LAST) && \
     (AXIS1_DRIVER_MODEL < ODRIVE_DRIVER_FIRST || AXIS1_DRIVER_MODEL > ODRIVE_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS1_DRIVER_MODEL unknown, use OFF or a valid DRIVER (from Constants.h)"
@@ -102,7 +102,7 @@
   #error "Configuration (Config.h): Setting AXIS1_DRIVER_STATUS unknown, use OFF or a valid driver status."
 #endif
 
-#ifdef AXIS1_DRIVER_PRESENT
+#ifdef AXIS1_STEP_DIR_PRESENT
   #if AXIS1_DRIVER_MICROSTEPS != OFF && (AXIS1_DRIVER_MICROSTEPS < 1 || AXIS1_DRIVER_MICROSTEPS > 256)
     #error "Configuration (Config.h): Setting AXIS1_DRIVER_MICROSTEPS unknown, use OFF or a valid microstep setting (range 1 to 256x and supported by your driver/design.)"
     #if AXIS1_DRIVER_MICROSTEPS != 1 && AXIS1_DRIVER_MICROSTEPS != 2 && AXIS1_DRIVER_MICROSTEPS != 4 && \
@@ -140,8 +140,8 @@
 #endif
 
 #ifdef AXIS1_SERVO_PRESENT
-  #if AXIS1_SERVO_ENCODER < SERVO_ENCODER_FIRST || AXIS1_SERVO_ENCODER > SERVO_ENCODER_LAST
-    #error "Configuration (Config.h): Setting AXIS1_SERVO_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
+  #if AXIS1_ENCODER < ENC_FIRST || AXIS1_ENCODER > ENC_LAST
+    #error "Configuration (Config.h): Setting AXIS1_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
   #endif
 #endif
 
@@ -175,7 +175,7 @@
 
 // AXIS2 DEC/ALT
 #if AXIS2_DRIVER_MODEL != OFF && \
-    (AXIS2_DRIVER_MODEL < DRIVER_FIRST || AXIS2_DRIVER_MODEL > DRIVER_LAST) && \
+    (AXIS2_DRIVER_MODEL < STEP_DIR_DRIVER_FIRST || AXIS2_DRIVER_MODEL > STEP_DIR_DRIVER_LAST) && \
     (AXIS2_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS2_DRIVER_MODEL > SERVO_DRIVER_LAST) && \
     (AXIS2_DRIVER_MODEL < ODRIVE_DRIVER_FIRST || AXIS2_DRIVER_MODEL > ODRIVE_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS2_DRIVER_MODEL unknown, use a valid DRIVER (from Constants.h)"
@@ -185,7 +185,7 @@
   #error "Configuration (Config.h): Setting AXIS2_DRIVER_STATUS unknown, use OFF or a valid driver status."
 #endif
 
-#ifdef AXIS2_DRIVER_PRESENT
+#ifdef AXIS2_STEP_DIR_PRESENT
   #if AXIS2_DRIVER_MICROSTEPS != OFF && (AXIS2_DRIVER_MICROSTEPS < 1 || AXIS2_DRIVER_MICROSTEPS > 256)
     #error "Configuration (Config.h): Setting AXIS2_DRIVER_MICROSTEPS unknown, use OFF or a valid microstep setting (range 1 to 256x and supported by your driver/design.)"
     #if AXIS2_DRIVER_MICROSTEPS != 1 && AXIS2_DRIVER_MICROSTEPS != 2 && AXIS2_DRIVER_MICROSTEPS != 4 && \
@@ -223,8 +223,8 @@
 #endif
 
 #ifdef AXIS2_SERVO_PRESENT
-  #if AXIS2_SERVO_ENCODER < SERVO_ENCODER_FIRST || AXIS2_SERVO_ENCODER > SERVO_ENCODER_LAST
-    #error "Configuration (Config.h): Setting AXIS2_SERVO_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
+  #if AXIS2_ENCODER < ENC_FIRST || AXIS2_ENCODER > ENC_LAST
+    #error "Configuration (Config.h): Setting AXIS2_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
   #endif
 #endif
 
@@ -418,7 +418,7 @@
 
 // AXIS3 ROTATOR
 #if AXIS3_DRIVER_MODEL != OFF && \
-    (AXIS3_DRIVER_MODEL < DRIVER_FIRST || AXIS3_DRIVER_MODEL > DRIVER_LAST) && \
+    (AXIS3_DRIVER_MODEL < STEP_DIR_DRIVER_FIRST || AXIS3_DRIVER_MODEL > STEP_DIR_DRIVER_LAST) && \
     (AXIS3_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS3_DRIVER_MODEL > SERVO_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS3_DRIVER_MODEL unknown, use OFF or a valid DRIVER (from Constants.h)"
 #endif
@@ -427,7 +427,7 @@
   #error "Configuration (Config.h): Setting AXIS3_DRIVER_STATUS unknown, use OFF or valid driver status."
 #endif
 
-#ifdef AXIS3_DRIVER_PRESENT
+#ifdef AXIS3_STEP_DIR_PRESENT
   #if AXIS3_DRIVER_MICROSTEPS != OFF && (AXIS3_DRIVER_MICROSTEPS < 1 || AXIS3_DRIVER_MICROSTEPS > 256)
     #error "Configuration (Config.h): Setting AXIS3_DRIVER_MICROSTEPS unknown, use OFF or a valid microstep setting (range 1 to 256x and supported by your driver/design.)"
     #if AXIS3_DRIVER_MICROSTEPS != 1 && AXIS3_DRIVER_MICROSTEPS != 2 && AXIS3_DRIVER_MICROSTEPS != 4 && \
@@ -468,8 +468,8 @@
 #endif
 
 #ifdef AXIS3_SERVO_PRESENT
-  #if AXIS3_SERVO_ENCODER != OFF && (AXIS3_SERVO_ENCODER < SERVO_ENCODER_FIRST || AXIS3_SERVO_ENCODER > SERVO_ENCODER_LAST)
-    #error "Configuration (Config.h): Setting AXIS3_SERVO_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
+  #if AXIS3_ENCODER != OFF && (AXIS3_ENCODER < ENC_FIRST || AXIS3_ENCODER > ENC_LAST)
+    #error "Configuration (Config.h): Setting AXIS3_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
   #endif
 #endif
 
@@ -505,7 +505,7 @@
 
 // AXIS4 FOCUSER
 #if AXIS4_DRIVER_MODEL != OFF && \
-    (AXIS4_DRIVER_MODEL < DRIVER_FIRST || AXIS4_DRIVER_MODEL > DRIVER_LAST) && \
+    (AXIS4_DRIVER_MODEL < STEP_DIR_DRIVER_FIRST || AXIS4_DRIVER_MODEL > STEP_DIR_DRIVER_LAST) && \
     (AXIS4_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS4_DRIVER_MODEL > SERVO_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS4_DRIVER_MODEL unknown, use OFF or a valid DRIVER (from Constants.h)"
 #endif
@@ -542,7 +542,7 @@
   #error "Configuration (Config.h): Setting AXIS4_SENSE_LIMIT_MAX unknown, use OFF or HIGH/LOW and HYST() and/or THLD() as described in comments."
 #endif
 
-#ifdef AXIS4_DRIVER_PRESENT
+#ifdef AXIS4_STEP_DIR_PRESENT
   #if AXIS4_DRIVER_MICROSTEPS != OFF && (AXIS4_DRIVER_MICROSTEPS < 1 || AXIS4_DRIVER_MICROSTEPS > 256)
     #error "Configuration (Config.h): Setting AXIS4_DRIVER_MICROSTEPS unknown, use OFF or a valid microstep setting (range 1 to 256x and supported by your driver/design.)"
     #if AXIS4_DRIVER_MICROSTEPS != 1 && AXIS4_DRIVER_MICROSTEPS != 2 && AXIS4_DRIVER_MICROSTEPS != 4 && \
@@ -583,14 +583,14 @@
 #endif
 
 #ifdef AXIS4_SERVO_PRESENT
-  #if AXIS4_SERVO_ENCODER < SERVO_ENCODER_FIRST || AXIS4_SERVO_ENCODER > SERVO_ENCODER_LAST
-    #error "Configuration (Config.h): Setting AXIS4_SERVO_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
+  #if AXIS4_ENCODER < ENC_FIRST || AXIS4_ENCODER > ENC_LAST
+    #error "Configuration (Config.h): Setting AXIS4_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
   #endif
 #endif
 
 // AXIS5 FOCUSER
 #if AXIS5_DRIVER_MODEL != OFF && \
-    (AXIS5_DRIVER_MODEL < DRIVER_FIRST || AXIS5_DRIVER_MODEL > DRIVER_LAST) && \
+    (AXIS5_DRIVER_MODEL < STEP_DIR_DRIVER_FIRST || AXIS5_DRIVER_MODEL > STEP_DIR_DRIVER_LAST) && \
     (AXIS5_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS5_DRIVER_MODEL > SERVO_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS5_DRIVER_MODEL unknown, use OFF or a valid DRIVER (from Constants.h)"
 #endif
@@ -627,7 +627,7 @@
   #error "Configuration (Config.h): Setting AXIS5_SENSE_LIMIT_MAX unknown, use OFF or HIGH/LOW and HYST() and/or THLD() as described in comments."
 #endif
 
-#ifdef AXIS5_DRIVER_PRESENT
+#ifdef AXIS5_STEP_DIR_PRESENT
   #if AXIS5_DRIVER_MICROSTEPS != OFF && (AXIS5_DRIVER_MICROSTEPS < 1 || AXIS5_DRIVER_MICROSTEPS > 256)
     #error "Configuration (Config.h): Setting AXIS5_DRIVER_MICROSTEPS unknown, use OFF or a valid microstep setting (range 1 to 256x and supported by your driver/design.)"
     #if AXIS5_DRIVER_MICROSTEPS != 1 && AXIS5_DRIVER_MICROSTEPS != 2 && AXIS5_DRIVER_MICROSTEPS != 4 && \
@@ -668,14 +668,14 @@
 #endif
 
 #ifdef AXIS5_SERVO_PRESENT
-  #if AXIS5_SERVO_ENCODER < SERVO_ENCODER_FIRST || AXIS5_SERVO_ENCODER > SERVO_ENCODER_LAST
-    #error "Configuration (Config.h): Setting AXIS5_SERVO_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
+  #if AXIS5_ENCODER < ENC_FIRST || AXIS5_ENCODER > ENC_LAST
+    #error "Configuration (Config.h): Setting AXIS5_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
   #endif
 #endif
 
 // AXIS6 FOCUSER
 #if AXIS6_DRIVER_MODEL != OFF && \
-    (AXIS6_DRIVER_MODEL < DRIVER_FIRST || AXIS6_DRIVER_MODEL > DRIVER_LAST) && \
+    (AXIS6_DRIVER_MODEL < STEP_DIR_DRIVER_FIRST || AXIS6_DRIVER_MODEL > STEP_DIR_DRIVER_LAST) && \
     (AXIS6_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS6_DRIVER_MODEL > SERVO_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS6_DRIVER_MODEL unknown, use OFF or a valid DRIVER (from Constants.h)"
 #endif
@@ -712,7 +712,7 @@
   #error "Configuration (Config.h): Setting AXIS6_SENSE_LIMIT_MAX unknown, use OFF or HIGH/LOW and HYST() and/or THLD() as described in comments."
 #endif
 
-#ifdef AXIS6_DRIVER_PRESENT
+#ifdef AXIS6_STEP_DIR_PRESENT
   #if AXIS6_DRIVER_MICROSTEPS != OFF && (AXIS6_DRIVER_MICROSTEPS < 1 || AXIS6_DRIVER_MICROSTEPS > 256)
     #error "Configuration (Config.h): Setting AXIS6_DRIVER_MICROSTEPS unknown, use OFF or a valid microstep setting (range 1 to 256x and supported by your driver/design.)"
     #if AXIS6_DRIVER_MICROSTEPS != 1 && AXIS6_DRIVER_MICROSTEPS != 2 && AXIS6_DRIVER_MICROSTEPS != 4 && \
@@ -750,14 +750,14 @@
 #endif
 
 #ifdef AXIS6_SERVO_PRESENT
-  #if AXIS6_SERVO_ENCODER < SERVO_ENCODER_FIRST || AXIS6_SERVO_ENCODER > SERVO_ENCODER_LAST
-    #error "Configuration (Config.h): Setting AXIS6_SERVO_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
+  #if AXIS6_ENCODER < ENC_FIRST || AXIS6_ENCODER > ENC_LAST
+    #error "Configuration (Config.h): Setting AXIS6_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
   #endif
 #endif
 
 // AXIS7 FOCUSER
 #if AXIS7_DRIVER_MODEL != OFF && \
-    (AXIS7_DRIVER_MODEL < DRIVER_FIRST || AXIS7_DRIVER_MODEL > DRIVER_LAST) && \
+    (AXIS7_DRIVER_MODEL < STEP_DIR_DRIVER_FIRST || AXIS7_DRIVER_MODEL > STEP_DIR_DRIVER_LAST) && \
     (AXIS7_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS7_DRIVER_MODEL > SERVO_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS7_DRIVER_MODEL unknown, use OFF or a valid DRIVER (from Constants.h)"
 #endif
@@ -794,7 +794,7 @@
   #error "Configuration (Config.h): Setting AXIS7_SENSE_LIMIT_MAX unknown, use OFF or HIGH/LOW and HYST() and/or THLD() as described in comments."
 #endif
 
-#ifdef AXIS7_DRIVER_PRESENT
+#ifdef AXIS7_STEP_DIR_PRESENT
   #if AXIS7_DRIVER_MICROSTEPS != OFF && (AXIS7_DRIVER_MICROSTEPS < 1 || AXIS7_DRIVER_MICROSTEPS > 256)
     #error "Configuration (Config.h): Setting AXIS7_DRIVER_MICROSTEPS unknown, use OFF or a valid microstep setting (range 1 to 256x and supported by your driver/design.)"
     #if AXIS7_DRIVER_MICROSTEPS != 1 && AXIS7_DRIVER_MICROSTEPS != 2 && AXIS7_DRIVER_MICROSTEPS != 4 && \
@@ -832,14 +832,14 @@
 #endif
 
 #ifdef AXIS7_SERVO_PRESENT
-  #if AXIS7_SERVO_ENCODER < SERVO_ENCODER_FIRST || AXIS7_SERVO_ENCODER > SERVO_ENCODER_LAST
-    #error "Configuration (Config.h): Setting AXIS7_SERVO_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
+  #if AXIS7_ENCODER < ENC_FIRST || AXIS7_ENCODER > ENC_LAST
+    #error "Configuration (Config.h): Setting AXIS7_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
   #endif
 #endif
 
 // AXIS8 FOCUSER
 #if AXIS8_DRIVER_MODEL != OFF && \
-    (AXIS8_DRIVER_MODEL < DRIVER_FIRST || AXIS8_DRIVER_MODEL > DRIVER_LAST) && \
+    (AXIS8_DRIVER_MODEL < STEP_DIR_DRIVER_FIRST || AXIS8_DRIVER_MODEL > STEP_DIR_DRIVER_LAST) && \
     (AXIS8_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS8_DRIVER_MODEL > SERVO_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS8_DRIVER_MODEL unknown, use OFF or a valid DRIVER (from Constants.h)"
 #endif
@@ -876,7 +876,7 @@
   #error "Configuration (Config.h): Setting AXIS8_SENSE_LIMIT_MAX unknown, use OFF or HIGH/LOW and HYST() and/or THLD() as described in comments."
 #endif
 
-#ifdef AXIS8_DRIVER_PRESENT
+#ifdef AXIS8_STEP_DIR_PRESENT
   #if AXIS8_DRIVER_MICROSTEPS != OFF && (AXIS8_DRIVER_MICROSTEPS < 1 || AXIS8_DRIVER_MICROSTEPS > 256)
     #error "Configuration (Config.h): Setting AXIS8_DRIVER_MICROSTEPS unknown, use OFF or a valid microstep setting (range 1 to 256x and supported by your driver/design.)"
     #if AXIS8_DRIVER_MICROSTEPS != 1 && AXIS8_DRIVER_MICROSTEPS != 2 && AXIS8_DRIVER_MICROSTEPS != 4 && \
@@ -914,14 +914,14 @@
 #endif
 
 #ifdef AXIS8_SERVO_PRESENT
-  #if AXIS8_SERVO_ENCODER < SERVO_ENCODER_FIRST || AXIS8_SERVO_ENCODER > SERVO_ENCODER_LAST
-    #error "Configuration (Config.h): Setting AXIS8_SERVO_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
+  #if AXIS8_ENCODER < ENC_FIRST || AXIS8_ENCODER > ENC_LAST
+    #error "Configuration (Config.h): Setting AXIS8_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
   #endif
 #endif
 
 // AXIS9 FOCUSER
 #if AXIS9_DRIVER_MODEL != OFF && \
-    (AXIS9_DRIVER_MODEL < DRIVER_FIRST || AXIS9_DRIVER_MODEL > DRIVER_LAST) && \
+    (AXIS9_DRIVER_MODEL < STEP_DIR_DRIVER_FIRST || AXIS9_DRIVER_MODEL > STEP_DIR_DRIVER_LAST) && \
     (AXIS9_DRIVER_MODEL < SERVO_DRIVER_FIRST || AXIS9_DRIVER_MODEL > SERVO_DRIVER_LAST)
   #error "Configuration (Config.h): Setting AXIS9_DRIVER_MODEL unknown, use OFF or a valid DRIVER (from Constants.h)"
 #endif
@@ -958,7 +958,7 @@
   #error "Configuration (Config.h): Setting AXIS9_SENSE_LIMIT_MAX unknown, use OFF or HIGH/LOW and HYST() and/or THLD() as described in comments."
 #endif
 
-#ifdef AXIS9_DRIVER_PRESENT
+#ifdef AXIS9_STEP_DIR_PRESENT
   #if AXIS9_DRIVER_MICROSTEPS != OFF && (AXIS9_DRIVER_MICROSTEPS < 1 || AXIS9_DRIVER_MICROSTEPS > 256)
     #error "Configuration (Config.h): Setting AXIS9_DRIVER_MICROSTEPS unknown, use OFF or a valid microstep setting (range 1 to 256x and supported by your driver/design.)"
     #if AXIS9_DRIVER_MICROSTEPS != 1 && AXIS9_DRIVER_MICROSTEPS != 2 && AXIS9_DRIVER_MICROSTEPS != 4 && \
@@ -996,8 +996,8 @@
 #endif
 
 #ifdef AXIS9_SERVO_PRESENT
-  #if AXIS9_SERVO_ENCODER < SERVO_ENCODER_FIRST || AXIS9_SERVO_ENCODER > SERVO_ENCODER_LAST
-    #error "Configuration (Config.h): Setting AXIS9_SERVO_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
+  #if AXIS9_ENCODER < ENC_FIRST || AXIS9_ENCODER > ENC_LAST
+    #error "Configuration (Config.h): Setting AXIS9_ENCODER unknown, use a valid SERVO ENCODER (from Constants.h)"
   #endif
 #endif
 

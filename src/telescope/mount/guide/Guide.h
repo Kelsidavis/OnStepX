@@ -61,6 +61,16 @@ class Guide {
     // abort both axes of guide
     void abort();
 
+    // returns true if a pulse guide is happening
+    inline bool activePulseGuide() { return state == GU_PULSE_GUIDE; }
+
+    // returns true if a guide is happening
+    inline bool active() {
+      return
+        (guideActionAxis1 == GA_FORWARD || guideActionAxis1 == GA_REVERSE ||
+         guideActionAxis2 == GA_FORWARD || guideActionAxis2 == GA_REVERSE) && !activePulseGuide(); 
+    }
+
     // returns true if any guide is happening on Axis1
     inline bool activeAxis1() { return guideActionAxis1 != GA_NONE; }
 
@@ -70,6 +80,9 @@ class Guide {
     void poll();
 
     void spiralPoll();
+
+    // enables or disables backlash for the GUIDE_DISABLE_BACKLASH option
+    void backlashEnableControl(bool enable);
 
     GuideState state = GU_NONE;
 

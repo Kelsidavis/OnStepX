@@ -78,6 +78,7 @@ CommandError Goto::request(Coordinate *coords, PierSideSelect pierSideSelect, bo
   limits.enabled(true);
   mount.syncToEncoders(false);
   if (mount.isHome()) mount.tracking(true);
+  guide.backlashEnableControl(true);
 
   // allow slewing near target for Eq modes if not too close to the poles
   slewDestinationDistHA = 0.0;
@@ -310,7 +311,9 @@ CommandError Goto::alignAddStar() {
 void Goto::alignReset() {
   alignState.currentStar = 0;
   alignState.lastStar = 0;
-  transform.align.modelClear();
+  #if ALIGN_MAX_NUM_STARS > 1
+    transform.align.modelClear();
+  #endif
 }
 
 // set any additional destinations required for a goto

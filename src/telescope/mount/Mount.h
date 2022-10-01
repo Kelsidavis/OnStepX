@@ -92,6 +92,9 @@ class Mount {
     void poll();
 
     float trackingRate = 1.0F;
+    float trackingRateAxis1 = 0.0F;
+    float trackingRateAxis2 = 0.0F;
+
     MountSettings settings = {RC_DEFAULT, { 0, 0 }};
 
   private:
@@ -111,15 +114,13 @@ class Mount {
     Coordinate current;
 
     TrackingState trackingState = TS_NONE;
-    float trackingRateAxis1     = 0.0F;
-    float trackingRateAxis2     = 0.0F;
 
     bool syncToEncodersEnabled = false;
 
     bool atHome = true;
 };
 
-#ifdef AXIS1_DRIVER_PRESENT
+#ifdef AXIS1_STEP_DIR_PRESENT
   extern StepDirMotor motor1;
 #elif defined(AXIS1_SERVO_PRESENT)
   extern ServoMotor motor1;
@@ -128,7 +129,7 @@ class Mount {
 #endif
 extern Axis axis1;
 
-#ifdef AXIS2_DRIVER_PRESENT
+#ifdef AXIS2_STEP_DIR_PRESENT
   extern StepDirMotor motor2;
 #elif defined(AXIS2_SERVO_PRESENT)
   extern ServoMotor motor2;

@@ -25,17 +25,6 @@
   #define SERIAL_E_BAUD_DEFAULT 9600
 #endif
 
-// Use the following settings for any TMC UART driver (TMC2209U) that may be present
-#ifndef DRIVER_UART_HARDWARE_SERIAL
-  #define DRIVER_UART_HARDWARE_SERIAL OFF        // Default is software serial for this board
-#elif DRIVER_UART_HARDWARE_SERIAL != OFF
-  #error "Configuration (Config.h): DRIVER_UART_HARDWARE_SERIAL must be OFF for this board"
-#endif
-
-#define SERIAL_TMC              SoftSerial       // Use software serial with RX on M2 and TX on M3 of axis
-#define SERIAL_TMC_BAUD         230400           // Baud rate
-#define SERIAL_TMC_NO_RX                         // Recieving data doesn't work with software serial
-
 // The multi-purpose pins (Aux3..Aux8 can be analog pwm/dac if supported)
 #define AUX0_PIN                19               // Status LED
 #define AUX1_PIN                18               // ESP8266 GPIO0, SPI MISO/Fault
@@ -95,8 +84,8 @@
 #ifndef AXIS1_SENSE_HOME_PIN
   #define AXIS1_SENSE_HOME_PIN  AUX3_PIN
 #endif
-#define AXIS1_SERVO_ENC1_PIN    AXIS1_M0_PIN
-#define AXIS1_SERVO_ENC2_PIN    AXIS1_M1_PIN
+#define AXIS1_ENCODER_A_PIN     AXIS1_M0_PIN
+#define AXIS1_ENCODER_B_PIN     AXIS1_M1_PIN
 #define AXIS1_SERVO_PH1_PIN     AXIS1_DIR_PIN
 #define AXIS1_SERVO_PH2_PIN     AXIS1_STEP_PIN
 
@@ -115,10 +104,10 @@
 #define AXIS2_DECAY_PIN         AXIS2_M2_PIN
 #define AXIS2_FAULT_PIN         AXIS2_M3_PIN
 #ifndef AXIS2_SENSE_HOME_PIN
-  #define AXIS2_SENSE_HOME_PIN    AUX4_PIN
+  #define AXIS2_SENSE_HOME_PIN  AUX4_PIN
 #endif
-#define AXIS2_SERVO_ENC1_PIN    AXIS2_M0_PIN
-#define AXIS2_SERVO_ENC2_PIN    AXIS2_M1_PIN
+#define AXIS2_ENCODER_A_PIN     AXIS2_M0_PIN
+#define AXIS2_ENCODER_B_PIN     AXIS2_M1_PIN
 #define AXIS2_SERVO_PH1_PIN     AXIS2_DIR_PIN
 #define AXIS2_SERVO_PH2_PIN     AXIS2_STEP_PIN
 

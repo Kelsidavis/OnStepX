@@ -5,7 +5,7 @@
 #define HAL_FAST_PROCESSOR
 
 // 1/200 second sidereal timer
-#define HAL_FRACTIONAL_SEC 200.0F
+#define HAL_FRACTIONAL_SEC 100.0F
 
 // This platform has 8 bit PWM
 #ifndef ANALOG_WRITE_PWM_BITS
@@ -52,7 +52,7 @@
   #error "Configuration (Config.h): SERIAL_BT_MODE and SERIAL_IP_MODE can't be enabled at the same time, disable one or both options."
 #endif
 
-#if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(2, 0, 3)
+#if !defined(ESP_ARDUINO_VERSION) || ESP_ARDUINO_VERSION < 131072 + 3 // version 2.0.3
   #define HAL_INIT() { \
     analogWriteResolution(ANALOG_WRITE_PWM_BITS); \
     SERIAL_BT_BEGIN(); \

@@ -6,8 +6,10 @@
 
 #include "../lib/convert/Convert.h"
 #include "../libApp/commands/ProcessCmds.h"
-#include "Telescope.h"
 #include "../libApp/weather/Weather.h"
+#include "../libApp/temperature/Temperature.h"
+
+#include "Telescope.h"
 
 #include "addonFlasher/AddonFlasher.h"
 #include "mount/Mount.h"
@@ -72,7 +74,8 @@ void Telescope::init(const char *fwName, int fwMajor, int fwMinor, const char *f
   #endif
 
   weather.init();
-
+  temperature.init();
+  
   #ifdef MOUNT_PRESENT
     mount.init();
     mountStatus.init();

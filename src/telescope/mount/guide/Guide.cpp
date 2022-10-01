@@ -58,15 +58,21 @@ CommandError Guide::startAxis1(GuideAction guideAction, GuideRateSelect rateSele
   guideFinishTimeAxis1 = millis() + guideTimeLimit;
 
   if (rate <= 2) {
-    state = GU_PULSE_GUIDE;
     axis1.setPowerDownOverrideTime(300000UL);
     axis2.setPowerDownOverrideTime(300000UL);
+  }
+  if (rate <= 2 && rateSelect != GR_CUSTOM) {
+    backlashEnableControl(false);
+    state = GU_PULSE_GUIDE;
     if (guideAction == GA_REVERSE) { VF("MSG: Guide, Axis1 rev @"); rateAxis1 = -rate; } else { VF("MSG: Guide, Axis1 fwd @"); rateAxis1 = rate; }
     V(rate); VL("X");
-
     mount.update();
   } else {
     state = GU_GUIDE;
+    backlashEnableControl(true);
+    if (rateSelect != GR_CUSTOM) {
+      if (guideAction == GA_REVERSE) rate -= mount.trackingRateAxis1; else rate += mount.trackingRateAxis1;
+    }
     axis1.setFrequencySlew(degToRadF(rate/240.0F));
     axis1AutoSlew(guideAction);
   }
@@ -109,16 +115,22 @@ CommandError Guide::startAxis2(GuideAction guideAction, GuideRateSelect rateSele
   guideFinishTimeAxis2 = millis() + guideTimeLimit;
 
   if (rate <= 2) {
-    state = GU_PULSE_GUIDE;
     axis1.setPowerDownOverrideTime(300000UL);
     axis2.setPowerDownOverrideTime(300000UL);
+  }
+  if (rate <= 2 && rateSelect != GR_CUSTOM) {
+    state = GU_PULSE_GUIDE;
+    backlashEnableControl(false);
     if (pierSide == PIER_SIDE_WEST) { if (guideAction == GA_FORWARD) guideAction = GA_REVERSE; else guideAction = GA_FORWARD; };
     if (guideAction == GA_REVERSE) { VF("MSG: Guide, Axis2 rev @"); rateAxis2 = -rate; } else { VF("MSG: Guide, Axis2 fwd @"); rateAxis2 = rate; }
     V(rate); VL("X");
-
     mount.update();
   } else {
     state = GU_GUIDE;
+    backlashEnableControl(true);
+    if (rateSelect != GR_CUSTOM) {
+      if (guideAction == GA_REVERSE) rate -= mount.trackingRateAxis2; else rate += mount.trackingRateAxis2;
+    }
     axis2.setFrequencySlew(degToRadF(rate/240.0F));
     axis2AutoSlew(guideAction);
   }
@@ -151,6 +163,8 @@ CommandError Guide::startSpiral(GuideRateSelect rateSelect, unsigned long guideT
   if (guideActionAxis1 != GA_NONE || guideActionAxis2 != GA_NONE) return CE_SLEW_IN_MOTION;
   CommandError e = validate(0, GA_SPIRAL); if (e != CE_NONE) return e;
 
+  backlashEnableControl(true);
+
   if (rateSelect < GR_2X)       rateSelect = GR_2X;
   if (rateSelect > GR_HALF_MAX) rateSelect = GR_HALF_MAX;
   spiralGuideRateSelect = rateSelect;
@@ -175,6 +189,8 @@ CommandError Guide::startSpiral(GuideRateSelect rateSelect, unsigned long guideT
 // start guide home (for use with home switches)
 CommandError Guide::startHome() {
   #if GOTO_FEATURE == ON
+    backlashEnableControl(true);
+
     // use guiding and switches to find home
     guide.state = GU_HOME_GUIDE;
 
@@ -352,6 +368,10 @@ void Guide::spiralPoll() {
   customRateAxis1 = rate*cos(angle);
   customRateAxis2 = rate*sin(angle);
 
+  // add the current tracking rates
+  customRateAxis1 += mount.trackingRateAxis1;
+  customRateAxis2 += mount.trackingRateAxis2;
+
   // set any new directions
   guideActionAxis1 = GA_FORWARD;
   guideActionAxis2 = GA_FORWARD;
@@ -409,6 +429,14 @@ void Guide::poll() {
 
   // watch for finished guides
   if (guideActionAxis1 == GA_NONE && guideActionAxis2 == GA_NONE) state = GU_NONE;
+}
+
+// enables or disables backlash for the GUIDE_DISABLE_BACKLASH option
+void Guide::backlashEnableControl(bool enabled) {
+  #if GUIDE_DISABLE_BACKLASH == ON
+    axis1.setBacklash(state ? mount.settings.backlash.axis1 : 0.0F);
+    axis2.setBacklash(state ? mount.settings.backlash.axis2 : 0.0F);
+  #endif
 }
 
 Guide guide;

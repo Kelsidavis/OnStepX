@@ -26,19 +26,6 @@
   #define SERIAL_E_BAUD_DEFAULT 9600
 #endif
 
-// Use the following settings for any TMC UART driver (TMC2209U) that may be present
-#define DRIVER_UART_ADDRESS_REMAP_AXIS5          // Map driver axis5 to axis3 in hardware serial mode
-
-#ifndef DRIVER_UART_HARDWARE_SERIAL
-  #define DRIVER_UART_HARDWARE_SERIAL OFF        // Default is software serial for this board
-#elif DRIVER_UART_HARDWARE_SERIAL != OFF
-  #error "Configuration (Config.h): DRIVER_UART_HARDWARE_SERIAL must be OFF for this board"
-#endif
-
-#define SERIAL_TMC              SoftSerial       // Use software serial with RX on M2 and TX on M3 of axis
-#define SERIAL_TMC_BAUD         230400           // Baud rate
-#define SERIAL_TMC_NO_RX                         // Recieving data doesn't work with software serial
-
 // The multi-purpose pins (Aux3..Aux8 can be analog pwm/dac if supported)
 #define AUX0_PIN                23               // Status LED
 #define AUX2_PIN                20               // PPS
@@ -91,8 +78,8 @@
 #ifndef AXIS1_SENSE_HOME_PIN
   #define AXIS1_SENSE_HOME_PIN  AUX3_PIN
 #endif
-#define AXIS1_SERVO_ENC1_PIN    AXIS1_M0_PIN
-#define AXIS1_SERVO_ENC2_PIN    AXIS1_M1_PIN
+#define AXIS1_ENCODER_A_PIN     AXIS1_M0_PIN
+#define AXIS1_ENCODER_B_PIN     AXIS1_M1_PIN
 #define AXIS1_SERVO_PH1_PIN     AXIS1_DIR_PIN
 #define AXIS1_SERVO_PH2_PIN     AXIS1_STEP_PIN
 
@@ -108,8 +95,8 @@
 #ifndef AXIS2_SENSE_HOME_PIN
   #define AXIS2_SENSE_HOME_PIN  AUX4_PIN
 #endif
-#define AXIS2_SERVO_ENC1_PIN    AXIS2_M0_PIN
-#define AXIS2_SERVO_ENC2_PIN    AXIS2_M1_PIN
+#define AXIS2_ENCODER_A_PIN     AXIS2_M0_PIN
+#define AXIS2_ENCODER_B_PIN     AXIS2_M1_PIN
 #define AXIS2_SERVO_PH1_PIN     AXIS2_DIR_PIN
 #define AXIS2_SERVO_PH2_PIN     AXIS2_STEP_PIN
 
@@ -123,8 +110,8 @@
 #define SHARED_DIRECTION_PINS                    // Hint that the direction pins are shared
 #define AXIS3_DIR_PIN           27
 #define AXIS3_DECAY_PIN         AXIS3_M2_PIN
-#define AXIS3_SERVO_ENC1_PIN    AXIS3_M0_PIN
-#define AXIS3_SERVO_ENC2_PIN    AXIS3_M1_PIN
+#define AXIS3_ENCODER_A_PIN     AXIS3_M0_PIN
+#define AXIS3_ENCODER_B_PIN     AXIS3_M1_PIN
 #define AXIS3_SERVO_PH1_PIN     AXIS3_DIR_PIN
 #define AXIS3_SERVO_PH2_PIN     AXIS3_STEP_PIN
 
@@ -137,8 +124,8 @@
 #define AXIS4_STEP_PIN          32
 #define AXIS4_DIR_PIN           27
 #define AXIS4_DECAY_PIN         AXIS4_M2_PIN
-#define AXIS4_SERVO_ENC1_PIN    AXIS4_M0_PIN
-#define AXIS4_SERVO_ENC2_PIN    AXIS4_M1_PIN
+#define AXIS4_ENCODER_A_PIN     AXIS4_M0_PIN
+#define AXIS4_ENCODER_B_PIN     AXIS4_M1_PIN
 #define AXIS4_SERVO_PH1_PIN     AXIS4_DIR_PIN
 #define AXIS4_SERVO_PH2_PIN     AXIS4_STEP_PIN
 
@@ -151,8 +138,8 @@
 #define AXIS5_STEP_PIN          26
 #define AXIS5_DIR_PIN           27
 #define AXIS5_DECAY_PIN         AXIS5_M2_PIN
-#define AXIS5_SERVO_ENC1_PIN    AXIS4_M0_PIN
-#define AXIS5_SERVO_ENC2_PIN    AXIS4_M1_PIN
+#define AXIS5_ENCODER_A_PIN     AXIS4_M0_PIN
+#define AXIS5_ENCODER_B_PIN     AXIS4_M1_PIN
 #define AXIS5_SERVO_PH1_PIN     AXIS4_DIR_PIN
 #define AXIS5_SERVO_PH2_PIN     AXIS4_STEP_PIN
 
