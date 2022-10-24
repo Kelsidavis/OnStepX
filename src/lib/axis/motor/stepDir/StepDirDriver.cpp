@@ -87,6 +87,10 @@ void StepDirDriver::init(float param1, float param2, float param3, float param4,
   settings.currentGoto = round(param5);
   UNUSED(param6);
 
+  if (settings.intpol == ON) settings.intpol = true; else settings.intpol = false;
+  if (settings.decay == OFF) settings.decay = SPREADCYCLE;
+  if (settings.decaySlewing == OFF) settings.decaySlewing = SPREADCYCLE;
+
   VF("MSG: StepDirDriver"); V(axisNumber); VF(", init model "); V(DRIVER_NAME[settings.model]);
   VF(" u-step mode "); if (settings.microsteps == OFF) { VF("OFF (assuming 1X)"); settings.microsteps = 1; } else { V(settings.microsteps); VF("X"); }
   VF(" (goto mode "); if (settings.microstepsSlewing == OFF) { VLF("OFF)"); } else { V(settings.microstepsSlewing); VL("X)"); }
@@ -181,14 +185,14 @@ void StepDirDriver::updateStatus() {
         (status.standstill                != lastStatus.standstill) ||
         (status.fault                     != lastStatus.fault)) {
       VF("MSG: StepDirDriver"); V(axisNumber); VF(", status change ");
-      VF("SGA"); if (status.outputA.shortToGround) VF("◄ "); else VF(". "); 
-      VF("OLA"); if (status.outputA.openLoad) VF("◄ "); else VF(". "); 
-      VF("SGB"); if (status.outputB.shortToGround) VF("◄ "); else VF(". "); 
-      VF("OLB"); if (status.outputB.openLoad) VF("◄ "); else VF(". "); 
-      VF("OTP"); if (status.overTemperatureWarning) VF("◄ "); else VF(". "); 
-      VF("OTE"); if (status.overTemperature) VF("◄ "); else VF(". "); 
-      VF("SST"); if (status.standstill) VF("◄ "); else VF(". "); 
-      VF("FLT"); if (status.fault) VLF("◄"); else VLF("."); 
+      VF("SGA"); if (status.outputA.shortToGround) VF("< "); else VF(". "); 
+      VF("OLA"); if (status.outputA.openLoad) VF("< "); else VF(". "); 
+      VF("SGB"); if (status.outputB.shortToGround) VF("< "); else VF(". "); 
+      VF("OLB"); if (status.outputB.openLoad) VF("< "); else VF(". "); 
+      VF("OTP"); if (status.overTemperatureWarning) VF("< "); else VF(". "); 
+      VF("OTE"); if (status.overTemperature) VF("< "); else VF(". "); 
+      VF("SST"); if (status.standstill) VF("< "); else VF(". "); 
+      VF("FLT"); if (status.fault) VLF("<"); else VLF("."); 
     }
     lastStatus = status;
   #endif

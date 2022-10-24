@@ -43,9 +43,6 @@ void StepDirTmcUART::init(float param1, float param2, float param3, float param4
     settings.currentHold = lround(settings.currentRun/2.0F);
   }
 
-  if (settings.decay == OFF) settings.decay = STEALTHCHOP;
-  if (settings.decaySlewing == OFF) settings.decaySlewing = SPREADCYCLE;
-
   VF("MSG: StepDirDriver"); V(axisNumber); VF(", TMC ");
   if (settings.currentRun == OFF) {
     VLF("current control OFF (set by Vref)");
@@ -62,9 +59,17 @@ void StepDirTmcUART::init(float param1, float param2, float param3, float param4
   // initialize the serial port
   VF("MSG: StepDirDriver"); V(axisNumber); VF(", TMC ");
   #if defined(SERIAL_TMC_HARDWARE_UART)
-    // help user hard code the device addresses 0,1,2,3
-    digitalWriteEx(Pins->m0, HIGH);
-    digitalWriteEx(Pins->m1, HIGH);
+    #if defined(DEDICATED_MODE_PINS)
+      // program the device address 0,1,2,3 since M0 and M1 are all unique
+      int deviceAddress = SERIAL_TMC_ADDRESS_MAP(axisNumber - 1);
+      digitalWriteEx(Pins->m0, bitRead(deviceAddress, 0));
+      digitalWriteEx(Pins->m1, bitRead(deviceAddress, 1));
+    #else
+      // help user hard code the device address 0,1,2,3 by cutting pins
+      digitalWriteEx(Pins->m0, HIGH);
+      digitalWriteEx(Pins->m1, HIGH);
+    #endif
+
     #define SerialTMC SERIAL_TMC
     static bool initialized = false;
     if (!initialized) {
@@ -91,13 +96,13 @@ void StepDirTmcUART::init(float param1, float param2, float param3, float param4
     driver = new TMC2208Stepper(&SerialTMC, 0.11F);
     ((TMC2208Stepper*)driver)->begin();
     ((TMC2208Stepper*)driver)->pwm_autoscale(true);
-    ((TMC2208Stepper*)driver)->intpol(true);
+    ((TMC2208Stepper*)driver)->intpol(settings.intpol);
   } else
   if (settings.model == TMC2209) { // also handles TMC2226
     driver = new TMC2209Stepper(&SerialTMC, 0.11F, SERIAL_TMC_ADDRESS_MAP(axisNumber - 1));
     ((TMC2209Stepper*)driver)->begin();
     ((TMC2209Stepper*)driver)->pwm_autoscale(true);
-    ((TMC2209Stepper*)driver)->intpol(true);
+    ((TMC2209Stepper*)driver)->intpol(settings.intpol);
   }
 
   // calibrate stealthChop

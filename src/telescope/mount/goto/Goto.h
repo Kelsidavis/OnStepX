@@ -60,7 +60,7 @@ class Goto {
     inline void setGotoTarget(Coordinate *coords) { gotoTarget = *coords; }
 
     // set goto or sync target
-    CommandError setTarget(Coordinate *coords, PierSideSelect pierSideSelect, bool native = true);
+    CommandError setTarget(Coordinate *coords, PierSideSelect pierSideSelect);
 
     // stop any presently active goto
     void stop();
@@ -121,6 +121,7 @@ class Goto {
     GotoState  stateLast            = GS_NONE;
     uint8_t    taskHandle           = 0;
     int        nearDestinationRefineStages;
+    unsigned long nearTargetTimeout = 0;
 
     MeridianFlipHome meridianFlipHome = {false, false};
 

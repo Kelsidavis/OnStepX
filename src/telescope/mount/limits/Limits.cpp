@@ -38,19 +38,19 @@ void Limits::init() {
 void Limits::constrainMeridianLimits() {
   if (settings.pastMeridianE > Deg360) {
     settings.pastMeridianE = Deg360;
-    DLF("WRN: Limits::init(), pastMeridianE > 360° setting to 360°");
+    DLF("WRN: Limits::init(), pastMeridianE > 360 deg setting to 360 deg");
   }
   if (settings.pastMeridianE < -Deg360) {
     settings.pastMeridianE = -Deg360;
-    DLF("WRN: Limits::init(), pastMeridianE < -360° setting to -360°");
+    DLF("WRN: Limits::init(), pastMeridianE < -360 deg setting to -360 deg");
   }
   if (settings.pastMeridianW > Deg360) {
     settings.pastMeridianW = Deg360;
-    DLF("WRN: Limits::init(), pastMeridianW > 360° setting to 360°");
+    DLF("WRN: Limits::init(), pastMeridianW > 360 deg setting to 360 deg");
   }
   if (settings.pastMeridianW < -Deg360) {
     settings.pastMeridianW = -Deg360;
-    DLF("WRN: Limits::init(), pastMeridianW < -360° setting to -360°");
+    DLF("WRN: Limits::init(), pastMeridianW < -360 deg setting to -360 deg");
   }
 }
 
@@ -174,16 +174,19 @@ void Limits::poll() {
     if (current.a < settings.altitude.min) error.altitude.min = true; else error.altitude.min = false;
     if (current.a > settings.altitude.max) error.altitude.max = true; else error.altitude.max = false;
 
+    // flag if near the NCP or SCP
+    bool nearPole = site.location.latitude >= 0.0 ? abs(current.d - HALF_PI) < SmallestFloat : abs(current.d + HALF_PI) < SmallestFloat;
+
     // meridian limits
     if (transform.meridianFlips && current.pierSide == PIER_SIDE_EAST) {
-      if (current.h < -settings.pastMeridianE) {
+      if (!nearPole && current.h < -settings.pastMeridianE) {
         stopAxis1(GA_REVERSE);
         error.meridian.east = true;
       } else error.meridian.east = false;
     } else error.meridian.east = false;
 
     if (transform.meridianFlips && current.pierSide == PIER_SIDE_WEST) {
-      if (current.h > settings.pastMeridianW && autoFlipDelayCycles == 0) {
+      if (!nearPole && current.h > settings.pastMeridianW && autoFlipDelayCycles == 0) {
         #if GOTO_FEATURE == ON && AXIS2_TANGENT_ARM == OFF
           if (goTo.isAutoFlipEnabled() && mount.isTracking()) {
             // disable this limit for a second to allow goto to exit the out of limits region
@@ -314,18 +317,18 @@ void Limits::poll() {
         lastError.limitSense.axis2.min != error.limitSense.axis2.min ||
         lastError.limitSense.axis2.max != error.limitSense.axis2.max) {
       V(errPre);
-      V(error.altitude.min?         "Alt-◄ " :"Alt-  ");
-      V(error.altitude.max?         "Alt+◄ " :"Alt+  ");
-      V(error.meridian.east?        "ME◄ "   :"ME  "  );
-      V(error.meridian.west?        "MW◄ "   :"MW  "  );
-      V(error.limit.axis1.min?      "A1L-◄ " :"A1L-  ");
-      V(error.limit.axis1.max?      "A1L+◄ " :"A1L+  ");
-      V(error.limit.axis2.min?      "A2L-◄ " :"A2L-  ");
-      V(error.limit.axis2.max?      "A2L+◄ " :"A2L+  ");
-      V(error.limitSense.axis1.min? "A1S-◄ " :"A1S-  ");
-      V(error.limitSense.axis1.max? "A1S+◄ " :"A1S+  ");
-      V(error.limitSense.axis2.min? "A2S-◄ " :"A2S-  ");
-      VL(error.limitSense.axis2.max?"A2S+◄"  :"A2S+"  );
+      V(error.altitude.min?         "Alt-< " :"Alt-  ");
+      V(error.altitude.max?         "Alt+< " :"Alt+  ");
+      V(error.meridian.east?        "ME< "   :"ME  "  );
+      V(error.meridian.west?        "MW< "   :"MW  "  );
+      V(error.limit.axis1.min?      "A1L-< " :"A1L-  ");
+      V(error.limit.axis1.max?      "A1L+< " :"A1L+  ");
+      V(error.limit.axis2.min?      "A2L-< " :"A2L-  ");
+      V(error.limit.axis2.max?      "A2L+< " :"A2L+  ");
+      V(error.limitSense.axis1.min? "A1S-< " :"A1S-  ");
+      V(error.limitSense.axis1.max? "A1S+< " :"A1S+  ");
+      V(error.limitSense.axis2.min? "A2S-< " :"A2S-  ");
+      VL(error.limitSense.axis2.max?"A2S+<"  :"A2S+"  );
     }
   #endif
 

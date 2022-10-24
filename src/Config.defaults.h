@@ -12,12 +12,6 @@
 #define PINMAP                        OFF
 #endif
 
-#if AXIS1_STEP_STATE == AXIS2_STEP_STATE == AXIS3_STEP_STATE == \
-    AXIS4_STEP_STATE == AXIS5_STEP_STATE == AXIS6_STEP_STATE == \
-    AXIS7_STEP_STATE == AXIS8_STEP_STATE == AXIS9_STEP_STATE == HIGH
-  #define DRIVER_STEP_DEFAULTS
-#endif
-
 // debug
 #ifndef DEBUG
 #define DEBUG                         OFF
@@ -136,6 +130,12 @@
 #define STEP_WAVE_FORM                PULSE
 #endif
 
+#if AXIS1_STEP_STATE == AXIS2_STEP_STATE == AXIS3_STEP_STATE == \
+    AXIS4_STEP_STATE == AXIS5_STEP_STATE == AXIS6_STEP_STATE == \
+    AXIS7_STEP_STATE == AXIS8_STEP_STATE == AXIS9_STEP_STATE == HIGH
+  #define DRIVER_STEP_DEFAULTS
+#endif
+
 // gpio device
 #ifndef GPIO_DEVICE
 #define GPIO_DEVICE                   OFF
@@ -215,6 +215,9 @@
   #endif
   #ifndef AXIS1_DRIVER_MICROSTEPS_GOTO
   #define AXIS1_DRIVER_MICROSTEPS_GOTO  OFF                       // microstep mode to use during slews
+  #endif
+  #ifndef AXIS1_DRIVER_INTPOL
+  #define AXIS1_DRIVER_INTPOL           ON                        // use interpolation if available
   #endif
   #ifndef AXIS1_DRIVER_DECAY
   #define AXIS1_DRIVER_DECAY            OFF                       // OFF for default, TMC STEALTHCHOP
@@ -361,6 +364,9 @@
   #endif
   #ifndef AXIS2_DRIVER_MICROSTEPS_GOTO
   #define AXIS2_DRIVER_MICROSTEPS_GOTO  OFF
+  #endif
+  #ifndef AXIS2_DRIVER_INTPOL
+  #define AXIS2_DRIVER_INTPOL           ON
   #endif
   #ifndef AXIS2_DRIVER_DECAY
   #define AXIS2_DRIVER_DECAY            OFF
@@ -510,8 +516,8 @@
 #ifndef STATUS_MOUNT_LED
 #define STATUS_MOUNT_LED              OFF
 #endif
-#ifndef STATUS_MOUNT_LED_ON_STATE
-#define STATUS_MOUNT_LED_ON_STATE     LOW
+#ifndef MOUNT_LED_ON_STATE
+#define MOUNT_LED_ON_STATE     LOW
 #endif
 #ifndef STATUS_BUZZER
 #define STATUS_BUZZER                 OFF
@@ -640,6 +646,9 @@
 #ifndef SLEW_RATE_MEMORY
 #define SLEW_RATE_MEMORY              OFF                         // ON to retain runtime slew rate settings across power cycles
 #endif
+#ifndef AXIS2_SLEW_RATE_PERCENT
+#define AXIS2_SLEW_RATE_PERCENT       100.0F                      // allows max slew rate slow down of Axis2 relative to Axis1
+#endif
 #ifndef SLEW_ACCELERATION_DIST
 #define SLEW_ACCELERATION_DIST        5.0                         // distance in degrees to complete acceleration/deceleration
 #endif
@@ -767,6 +776,9 @@
   #endif
   #ifndef AXIS3_DRIVER_MICROSTEPS_GOTO
   #define AXIS3_DRIVER_MICROSTEPS_GOTO  OFF
+  #endif
+  #ifndef AXIS3_DRIVER_INTPOL
+  #define AXIS3_DRIVER_INTPOL           ON
   #endif
   #ifndef AXIS3_DRIVER_DECAY
   #define AXIS3_DRIVER_DECAY            OFF
@@ -941,6 +953,9 @@
   #ifndef AXIS4_DRIVER_MICROSTEPS_GOTO
   #define AXIS4_DRIVER_MICROSTEPS_GOTO  OFF
   #endif
+  #ifndef AXIS4_DRIVER_INTPOL
+  #define AXIS4_DRIVER_INTPOL           ON
+  #endif
   #ifndef AXIS4_DRIVER_DECAY
   #define AXIS4_DRIVER_DECAY            OFF
   #endif
@@ -1091,6 +1106,9 @@
   #ifndef AXIS5_DRIVER_MICROSTEPS_GOTO
   #define AXIS5_DRIVER_MICROSTEPS_GOTO  OFF
   #endif
+  #ifndef AXIS5_DRIVER_INTPOL
+  #define AXIS5_DRIVER_INTPOL           ON
+  #endif
   #ifndef AXIS5_DRIVER_DECAY
   #define AXIS5_DRIVER_DECAY            OFF
   #endif
@@ -1238,6 +1256,9 @@
   #endif
   #ifndef AXIS6_DRIVER_MICROSTEPS_GOTO
   #define AXIS6_DRIVER_MICROSTEPS_GOTO  OFF
+  #endif
+  #ifndef AXIS6_DRIVER_INTPOL
+  #define AXIS6_DRIVER_INTPOL           ON
   #endif
   #ifndef AXIS6_DRIVER_DECAY
   #define AXIS6_DRIVER_DECAY            OFF
@@ -1387,6 +1408,9 @@
   #ifndef AXIS7_DRIVER_MICROSTEPS_GOTO
   #define AXIS7_DRIVER_MICROSTEPS_GOTO  OFF
   #endif
+  #ifndef AXIS7_DRIVER_INTPOL
+  #define AXIS7_DRIVER_INTPOL           ON
+  #endif
   #ifndef AXIS7_DRIVER_DECAY
   #define AXIS7_DRIVER_DECAY            OFF
   #endif
@@ -1535,6 +1559,9 @@
   #ifndef AXIS8_DRIVER_MICROSTEPS_GOTO
   #define AXIS8_DRIVER_MICROSTEPS_GOTO  OFF
   #endif
+  #ifndef AXIS8_DRIVER_INTPOL
+  #define AXIS8_DRIVER_INTPOL           ON
+  #endif
   #ifndef AXIS8_DRIVER_DECAY
   #define AXIS8_DRIVER_DECAY            OFF
   #endif
@@ -1682,6 +1709,9 @@
   #endif
   #ifndef AXIS9_DRIVER_MICROSTEPS_GOTO
   #define AXIS9_DRIVER_MICROSTEPS_GOTO  OFF
+  #endif
+  #ifndef AXIS9_DRIVER_INTPOL
+  #define AXIS9_DRIVER_INTPOL           ON
   #endif
   #ifndef AXIS9_DRIVER_DECAY
   #define AXIS9_DRIVER_DECAY            OFF

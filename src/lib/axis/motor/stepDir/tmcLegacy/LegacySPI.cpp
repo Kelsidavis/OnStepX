@@ -36,9 +36,6 @@ void StepDirTmcSPI::init(float param1, float param2, float param3, float param4,
     settings.currentHold = lround(settings.currentRun/2.0F);
   }
 
-  if (settings.decay == OFF) settings.decay = STEALTHCHOP;
-  if (settings.decaySlewing == OFF) settings.decaySlewing = SPREADCYCLE;
-
   VF("MSG: StepDirDriver"); V(axisNumber); VF(", TMC ");
   if (settings.currentRun == OFF) {
     VLF("current control OFF (set by Vref)");
@@ -53,11 +50,11 @@ void StepDirTmcSPI::init(float param1, float param2, float param3, float param4,
 
   // calibrate stealthChop
   if (settings.decay == STEALTHCHOP || settings.decaySlewing == STEALTHCHOP) {
-    driver.mode(true, STEALTHCHOP, microstepCode, settings.currentRun, settings.currentRun);
+    driver.mode(settings.intpol, STEALTHCHOP, microstepCode, settings.currentRun, settings.currentRun);
     VF("MSG: StepDirDriver"); V(axisNumber); VL(", TMC standstill automatic current calibration");
     delay(100);
   }
-  driver.mode(true, settings.decay, microstepCode, settings.currentRun, settings.currentHold);
+  driver.mode(settings.intpol, settings.decay, microstepCode, settings.currentRun, settings.currentHold);
 
   // automatically set fault status for known drivers
   status.active = settings.status != OFF;
@@ -123,13 +120,13 @@ int StepDirTmcSPI::modeMicrostepSlewing() {
 }
 
 void StepDirTmcSPI::modeDecayTracking() {
-  driver.mode(true, settings.decay, microstepCode, settings.currentRun, settings.currentHold);
+  driver.mode(settings.intpol, settings.decay, microstepCode, settings.currentRun, settings.currentHold);
 }
 
 void StepDirTmcSPI::modeDecaySlewing() {
   int IGOTO = settings.currentGoto;
   if (IGOTO == OFF) IGOTO = settings.currentRun;
-  driver.mode(true, settings.decaySlewing, microstepCode, IGOTO, settings.currentHold);
+  driver.mode(settings.intpol, settings.decaySlewing, microstepCode, IGOTO, settings.currentHold);
 }
 
 void StepDirTmcSPI::updateStatus() {
@@ -178,7 +175,7 @@ void StepDirTmcSPI::enable(bool state) {
   VF(", powered "); if (state) { VF("up"); } else { VF("down"); } VLF(" using SPI or UART");
   int I_run = 0, I_hold = 0;
   if (state) { I_run = settings.currentRun; I_hold = settings.currentHold; }
-  driver.mode(true, settings.decay, microstepCode, I_run, I_hold);
+  driver.mode(settings.intpol, settings.decay, microstepCode, I_run, I_hold);
 }
 
 #endif
