@@ -100,7 +100,7 @@ IRAM_ATTR int StepDirGeneric::modeMicrostepSlewing() {
 void StepDirGeneric::modeDecayTracking() {
   if (settings.decay == OFF) return;
   int8_t state = getDecayPinState(settings.decay);
-  digitalWriteEx(decayPin, state);
+  if (state != OFF) digitalWriteEx(decayPin, state);
 }
 
 void StepDirGeneric::modeDecaySlewing() {
@@ -125,7 +125,7 @@ int8_t StepDirGeneric::getDecayPinState(int8_t decay) {
 }
 
 bool StepDirGeneric::isDecayOnM2() {
-  if (settings.model == TMC2209S) return true; else return false;
+  if (settings.model == TMC2209S || settings.model == TMC2225S) return true; else return false;
 }
 
 #endif
