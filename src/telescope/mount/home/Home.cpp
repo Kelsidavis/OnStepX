@@ -22,12 +22,18 @@ void Home::init() {
   #else
     if (transform.mountType == ALTAZM) position.a = degToRad(AXIS2_HOME_DEFAULT); else position.d = degToRad(AXIS2_HOME_DEFAULT);
   #endif
+  if (transform.mountType != ALTAZM) {
+    axis1.setReverse(site.locationEx.latitude.sign < 0.0);
+  }
   position.pierSide = PIER_SIDE_NONE;
 }
 
 // move mount to the home position
 CommandError Home::request() {
-  #if GOTO_FEATURE == ON
+    #if LIMIT_STRICT == ON
+      if (!site.dateIsReady || !site.timeIsReady) return CE_SLEW_ERR_IN_STANDBY;
+    #endif
+
     if (goTo.state != GS_NONE) return CE_SLEW_IN_MOTION;
     if (guide.state != GU_NONE) {
       if (guide.state == GU_HOME_GUIDE) guide.stop();
@@ -47,6 +53,7 @@ CommandError Home::request() {
 
     // make sure the motors are powered on
     mount.enable(true);
+    goTo.firstGoto = false;
 
     VLF("MSG: Mount, moving to home");
 
@@ -58,8 +65,11 @@ CommandError Home::request() {
       #if AXIS2_TANGENT_ARM == OFF
         state = HS_HOMING;
         if (transform.mountType == ALTAZM) transform.horToEqu(&position);
-        CommandError result = goTo.request(&position, PSS_EAST_ONLY, false);
-        if (result != CE_NONE) { VLF("WRN: Mount, moving to home goto failed"); }
+        CommandError result = goTo.request(position, PSS_EAST_ONLY, false);
+        if (result != CE_NONE) {
+          VLF("WRN: Mount, moving to home goto failed");
+          state = HS_NONE;
+        }
         return result;
       #else
         axis2.setFrequencySlew(goTo.rate*((float)(AXIS2_SLEW_RATE_PERCENT)/100.0F));
@@ -68,7 +78,6 @@ CommandError Home::request() {
         axis2.autoGoto(degToRadF((float)(SLEW_ACCELERATION_DIST)));
       #endif
     }
-  #endif
   return CE_NONE;
 }
 
@@ -96,7 +105,11 @@ void Home::requestDone() {
 // reset mount at home
 CommandError Home::reset(bool fullReset) {
   #if GOTO_FEATURE == ON
-    if (goTo.state != GS_NONE) return CE_SLEW_IN_MOTION;
+    if (goTo.state != GS_NONE) {
+      axis1.autoSlewAbort();
+      axis2.autoSlewAbort();
+      return CE_SLEW_IN_MOTION;
+    }
   #endif
   if (guide.state != GU_NONE) {
     if (guide.state == GU_HOME_GUIDE) guide.stop();
@@ -109,19 +122,31 @@ CommandError Home::reset(bool fullReset) {
   // stop tracking and set default rate
   mount.tracking(false);
   mount.trackingRate = hzToSidereal(SIDEREAL_RATE_HZ);
+  mount.trackingRateOffsetRA = 0.0F;
+  mount.trackingRateOffsetDec = 0.0F;
+  goTo.firstGoto = true;
 
   tasks.yieldMicros(10000);
 
-  // setup axis1 and axis2
-  if (axis1.resetPosition(0.0L) != 0) { DL("WRN: Home::reset(), failed to resetPosition Axis1"); }
-  if (axis2.resetPosition(0.0L) != 0) { DL("WRN: Home::reset(), failed to resetPosition Axis2"); }
-
   if (transform.mountType == ALTAZM) {
-    axis1.setInstrumentCoordinate(position.z);
-    axis2.setInstrumentCoordinate(position.a);
+    position.a1 = position.z;
+    position.a2 = position.a;
   } else {
-    axis1.setInstrumentCoordinate(position.h);
-    axis2.setInstrumentCoordinate(position.d);
+    position.a1 = position.h;
+    position.a2 = position.d;
+  }
+
+  if (!goTo.absoluteEncodersPresent || mount.isHome()) {
+    if (axis1.resetPosition(0.0L) != 0) { DL("WRN: Home::reset(), failed to resetPosition Axis1"); }
+    if (axis2.resetPosition(0.0L) != 0) { DL("WRN: Home::reset(), failed to resetPosition Axis2"); }
+
+    if (transform.mountType == ALTAZM) {
+      axis1.setInstrumentCoordinate(position.z);
+      axis2.setInstrumentCoordinate(position.a);
+    } else {
+      axis1.setInstrumentCoordinate(position.h);
+      axis2.setInstrumentCoordinate(position.d);
+    }
   }
 
   axis1.setBacklash(mount.settings.backlash.axis1);
@@ -131,15 +156,17 @@ CommandError Home::reset(bool fullReset) {
   axis2.setFrequencySlew(degToRadF(0.1F));
 
   // make sure the motors are powered off
-  if (fullReset) mount.enable(false);
+  if (fullReset) {
+    mount.enable(MOUNT_ENABLE_IN_STANDBY == ON);
 
-  #if GOTO_FEATURE == ON
-    if (fullReset) goTo.alignReset();
-  #endif
+    #if GOTO_FEATURE == ON
+      goTo.alignReset();
+    #endif
 
-  mount.setHome(true);
-
-  if (fullReset) { VLF("MSG: Mount, reset at home and in standby"); } else { VLF("MSG: Mount, reset at home"); }
+    VLF("MSG: Mount, reset at home and in standby");
+  } else {
+    VLF("MSG: Mount, reset at home");
+  }
 
   return CE_NONE;
 }

@@ -7,6 +7,20 @@
   #error "Configuration (Config.h): FileVersionConfig (Config.h version) must be 5 for this OnStep."
 #endif
 
+// BACKWARDS COMPATABILITY ------------------------
+#ifdef AXIS3_SLEW_RATE_DESIRED
+  #warning "Configuration (Config.h): AXIS3_SLEW_RATE_DESIRED has been replaced with AXIS3_SLEW_RATE_BASE_DESIRED please update"
+  #define AXIS3_SLEW_RATE_BASE_DESIRED AXIS3_SLEW_RATE_DESIRED
+#endif
+#ifdef AXIS4_SLEW_RATE_DESIRED
+  #warning "Configuration (Config.h): AXIS4_SLEW_RATE_DESIRED has been replaced with AXIS4_SLEW_RATE_BASE_DESIRED please update"
+  #define AXIS4_SLEW_RATE_BASE_DESIRED AXIS4_SLEW_RATE_DESIRED
+#endif
+#ifdef AXIS5_SLEW_RATE_DESIRED
+  #warning "Configuration (Config.h): AXIS5_SLEW_RATE_DESIRED has been replaced with AXIS5_SLEW_RATE_BASE_DESIRED please update"
+  #define AXIS5_SLEW_RATE_BASE_DESIRED AXIS5_SLEW_RATE_DESIRED
+#endif
+
 // GENERAL ---------------------------------------
 #if defined(STEP_DIR_TMC_UART_PRESENT) && (!defined(SERIAL_TMC) || !defined(SERIAL_TMC_BAUD))
   #error "Configuration (Config.h): This PINMAP doesn't support TMC UART mode drivers"
@@ -145,6 +159,10 @@
   #endif
 #endif
 
+#if AXIS1_SYNC_THRESHOLD != OFF && AXIS2_SYNC_THRESHOLD == OFF
+  #error "Configuration (Config.h): Setting AXIS2_SYNC_THRESHOLD must be set if AXIS1_SYNC_THRESHOLD is set"
+#endif
+
 #if AXIS1_REVERSE != ON && AXIS1_REVERSE != OFF
   #error "Configuration (Config.h): Setting AXIS1_REVERSE unknown, use OFF or ON."
 #endif
@@ -163,6 +181,10 @@
 
 #if (AXIS1_SENSE_HOME) != OFF && (AXIS1_SENSE_HOME) < 0
   #error "Configuration (Config.h): Setting AXIS1_SENSE_HOME unknown, use OFF or HIGH/LOW and HYST() and/or THLD() as described in comments."
+#endif
+
+#if (AXIS1_SENSE_HOME) != OFF && (AXIS2_SENSE_HOME) == OFF
+  #error "Configuration (Config.h): Enabling AXIS1_SENSE_HOME requires enabling AXIS2_SENSE_HOME also."
 #endif
 
 #if (AXIS1_SENSE_LIMIT_MIN) != OFF && (AXIS1_SENSE_LIMIT_MIN) < 0
@@ -228,6 +250,10 @@
   #endif
 #endif
 
+#if AXIS2_SYNC_THRESHOLD != OFF && AXIS1_SYNC_THRESHOLD == OFF
+  #error "Configuration (Config.h): Setting AXIS1_SYNC_THRESHOLD must be set if AXIS2_SYNC_THRESHOLD is set"
+#endif
+
 #if AXIS2_REVERSE != ON && AXIS2_REVERSE != OFF
   #error "Configuration (Config.h): Setting AXIS2_REVERSE unknown, use OFF or ON."
 #endif
@@ -262,6 +288,10 @@
 
 #if AXIS2_TANGENT_ARM_CORRECTION != ON && AXIS2_TANGENT_ARM_CORRECTION != OFF
   #error "Configuration (Config.h): Setting AXIS2_TANGENT_ARM_CORRECTION unknown, use OFF or ON."
+#endif
+
+#if AXIS2_TANGENT_ARM == OFF && (AXIS2_SENSE_HOME) != OFF && (AXIS1_SENSE_HOME) == OFF
+  #error "Configuration (Config.h): Enabling AXIS2_SENSE_HOME requires enabling AXIS1_SENSE_HOME or AXIS2_TANGENT_ARM."
 #endif
 
 // MOUNT TYPE
@@ -374,6 +404,19 @@
 
 #if TRACK_BACKLASH_RATE < 2 && TRACK_BACKLASH_RATE > 100
   #error "Configuration (Config.h): Setting TRACK_BACKLASH_RATE unknown, use a value between 2 and 100 (x Sidereal.)"
+#endif
+
+// GOTO_FEATURE CHECKS
+#if GOTO_FEATURE == OFF && TRACK_BACKLASH_RATE > 20
+  #error "Configuration (Config.h): Setting TRACK_BACKLASH_RATE must be <= 20 when GOTO_FEATURE is OFF."
+#endif
+
+#if GOTO_FEATURE == OFF && (MOUNT_TYPE == GEM_TA || MOUNT_TYPE == GEM_TAC)
+  #error "Configuration (Config.h): Setting GEM_TA/GEM_TAC not available when GOTO_FEATURE is OFF."
+#endif
+
+#if GOTO_FEATURE == OFF && (MOUNT_TYPE == FORK_TA || MOUNT_TYPE == FORK_TAC)
+  #error "Configuration (Config.h): Setting FORK_TA/FORK_TAC not available when GOTO_FEATURE is OFF."
 #endif
 
 // PIER SIDE BEHAVIOUR
@@ -514,8 +557,8 @@
   #error "Configuration (Config.h): Setting AXIS4_SLEW_RATE_MINIMUM out of range, use a value between 5 and 200"
 #endif
 
-#if AXIS4_SLEW_RATE_DESIRED < 200 || AXIS4_SLEW_RATE_DESIRED > 5000
-  #error "Configuration (Config.h): Setting AXIS4_SLEW_RATE_DESIRED out of range, use a value between 200 and 5000"
+#if AXIS4_SLEW_RATE_BASE_DESIRED < 200 || AXIS4_SLEW_RATE_BASE_DESIRED > 5000
+  #error "Configuration (Config.h): Setting AXIS4_SLEW_RATE_BASE_DESIRED out of range, use a value between 200 and 5000"
 #endif
 
 #if AXIS4_DRIVER_STATUS != OFF && AXIS4_DRIVER_STATUS != ON && AXIS4_DRIVER_STATUS != HIGH && AXIS4_DRIVER_STATUS != LOW
@@ -607,8 +650,8 @@
   #error "Configuration (Config.h): Setting AXIS5_SLEW_RATE_MINIMUM out of range, use a value between 5 and 200"
 #endif
 
-#if AXIS5_SLEW_RATE_DESIRED < 200 || AXIS5_SLEW_RATE_DESIRED > 5000
-  #error "Configuration (Config.h): Setting AXIS5_SLEW_RATE_DESIRED out of range, use a value between 200 and 5000"
+#if AXIS5_SLEW_RATE_BASE_DESIRED < 200 || AXIS5_SLEW_RATE_BASE_DESIRED > 5000
+  #error "Configuration (Config.h): Setting AXIS5_SLEW_RATE_BASE_DESIRED out of range, use a value between 200 and 5000"
 #endif
 
 #if AXIS5_DRIVER_STATUS != OFF && AXIS5_DRIVER_STATUS != ON && AXIS5_DRIVER_STATUS != HIGH && AXIS5_DRIVER_STATUS != LOW
@@ -700,8 +743,8 @@
   #error "Configuration (Config.h): Setting AXIS6_SLEW_RATE_MINIMUM out of range, use a value between 5 and 200"
 #endif
 
-#if AXIS6_SLEW_RATE_DESIRED < 200 || AXIS6_SLEW_RATE_DESIRED > 5000
-  #error "Configuration (Config.h): Setting AXIS6_SLEW_RATE_DESIRED out of range, use a value between 200 and 5000"
+#if AXIS6_SLEW_RATE_BASE_DESIRED < 200 || AXIS6_SLEW_RATE_BASE_DESIRED > 5000
+  #error "Configuration (Config.h): Setting AXIS6_SLEW_RATE_BASE_DESIRED out of range, use a value between 200 and 5000"
 #endif
 
 #if AXIS6_DRIVER_STATUS != OFF && AXIS6_DRIVER_STATUS != ON && AXIS6_DRIVER_STATUS != HIGH && AXIS6_DRIVER_STATUS != LOW
@@ -790,8 +833,8 @@
   #error "Configuration (Config.h): Setting AXIS7_SLEW_RATE_MINIMUM out of range, use a value between 5 and 200"
 #endif
 
-#if AXIS7_SLEW_RATE_DESIRED < 200 || AXIS7_SLEW_RATE_DESIRED > 5000
-  #error "Configuration (Config.h): Setting AXIS7_SLEW_RATE_DESIRED out of range, use a value between 200 and 5000"
+#if AXIS7_SLEW_RATE_BASE_DESIRED < 200 || AXIS7_SLEW_RATE_BASE_DESIRED > 5000
+  #error "Configuration (Config.h): Setting AXIS7_SLEW_RATE_BASE_DESIRED out of range, use a value between 200 and 5000"
 #endif
 
 #if AXIS7_DRIVER_STATUS != OFF && AXIS7_DRIVER_STATUS != ON && AXIS7_DRIVER_STATUS != HIGH && AXIS7_DRIVER_STATUS != LOW
@@ -880,8 +923,8 @@
   #error "Configuration (Config.h): Setting AXIS8_SLEW_RATE_MINIMUM out of range, use a value between 5 and 200"
 #endif
 
-#if AXIS8_SLEW_RATE_DESIRED < 200 || AXIS8_SLEW_RATE_DESIRED > 5000
-  #error "Configuration (Config.h): Setting AXIS8_SLEW_RATE_DESIRED out of range, use a value between 200 and 5000"
+#if AXIS8_SLEW_RATE_BASE_DESIRED < 200 || AXIS8_SLEW_RATE_BASE_DESIRED > 5000
+  #error "Configuration (Config.h): Setting AXIS8_SLEW_RATE_BASE_DESIRED out of range, use a value between 200 and 5000"
 #endif
 
 #if AXIS8_DRIVER_STATUS != OFF && AXIS8_DRIVER_STATUS != ON && AXIS8_DRIVER_STATUS != HIGH && AXIS8_DRIVER_STATUS != LOW
@@ -970,8 +1013,8 @@
   #error "Configuration (Config.h): Setting AXIS9_SLEW_RATE_MINIMUM out of range, use a value between 5 and 200"
 #endif
 
-#if AXIS9_SLEW_RATE_DESIRED < 200 || AXIS9_SLEW_RATE_DESIRED > 5000
-  #error "Configuration (Config.h): Setting AXIS9_SLEW_RATE_DESIRED out of range, use a value between 200 and 5000"
+#if AXIS9_SLEW_RATE_BASE_DESIRED < 200 || AXIS9_SLEW_RATE_BASE_DESIRED > 5000
+  #error "Configuration (Config.h): Setting AXIS9_SLEW_RATE_BASE_DESIRED out of range, use a value between 200 and 5000"
 #endif
 
 #if AXIS9_DRIVER_STATUS != OFF && AXIS9_DRIVER_STATUS != ON && AXIS9_DRIVER_STATUS != HIGH && AXIS9_DRIVER_STATUS != LOW
@@ -1056,8 +1099,8 @@
 
 // FOCUSER TEMPERATURE ---------------------------
 #if FOCUSER_TEMPERATURE != OFF && \
-    FOCUSER_TEMPERATURE & DS_MASK != DS18B20 && \
-    FOCUSER_TEMPERATURE & DS_MASK != DS18S20 && \
+    (FOCUSER_TEMPERATURE & DS_MASK) != DS18B20 && \
+    (FOCUSER_TEMPERATURE & DS_MASK) != DS18S20 && \
     (FOCUSER_TEMPERATURE < TEMPERATURE_FIRST || FOCUSER_TEMPERATURE > TEMPERATURE_LAST)
   #error "Configuration (Config.h): Setting FOCUSER_TEMPERATURE unknown, use OFF or TEMPERATURE device (from Constants.h)"
 #endif
@@ -1090,50 +1133,50 @@
 #endif
 
 #if FEATURE1_TEMP != OFF && \
-    FEATURE1_TEMP & DS_MASK != DS18B20 && \
-    FEATURE1_TEMP & DS_MASK != DS18S20 && \
+    (FEATURE1_TEMP & DS_MASK) != DS18B20 && \
+    (FEATURE1_TEMP & DS_MASK) != DS18S20 && \
     (FEATURE1_TEMP < TEMPERATURE_FIRST || FEATURE1_TEMP > TEMPERATURE_LAST)
   #error "Configuration (Config.h): Setting FEATURE1_TEMP unknown, use OFF or TEMPERATURE device (from Constants.h)"
 #endif
 #if FEATURE2_TEMP != OFF && \
-    FEATURE2_TEMP & DS_MASK != DS18B20 && \
-    FEATURE2_TEMP & DS_MASK != DS18S20 && \
+    (FEATURE2_TEMP & DS_MASK) != DS18B20 && \
+    (FEATURE2_TEMP & DS_MASK) != DS18S20 && \
     (FEATURE2_TEMP < TEMPERATURE_FIRST || FEATURE2_TEMP > TEMPERATURE_LAST)
   #error "Configuration (Config.h): Setting FEATURE2_TEMP unknown, use OFF or TEMPERATURE device (from Constants.h)"
 #endif
 #if FEATURE3_TEMP != OFF && \
-    FEATURE3_TEMP & DS_MASK != DS18B20 && \
-    FEATURE3_TEMP & DS_MASK != DS18S20 && \
+    (FEATURE3_TEMP & DS_MASK) != DS18B20 && \
+    (FEATURE3_TEMP & DS_MASK) != DS18S20 && \
     (FEATURE3_TEMP < TEMPERATURE_FIRST || FEATURE3_TEMP > TEMPERATURE_LAST)
   #error "Configuration (Config.h): Setting FEATURE3_TEMP unknown, use OFF or TEMPERATURE device (from Constants.h)"
 #endif
 #if FEATURE4_TEMP != OFF && \
-    FEATURE4_TEMP & DS_MASK != DS18B20 && \
-    FEATURE4_TEMP & DS_MASK != DS18S20 && \
+    (FEATURE4_TEMP & DS_MASK) != DS18B20 && \
+    (FEATURE4_TEMP & DS_MASK) != DS18S20 && \
     (FEATURE4_TEMP < TEMPERATURE_FIRST || FEATURE4_TEMP > TEMPERATURE_LAST)
   #error "Configuration (Config.h): Setting FEATURE4_TEMP unknown, use OFF or TEMPERATURE device (from Constants.h)"
 #endif
 #if FEATURE5_TEMP != OFF && \
-    FEATURE5_TEMP & DS_MASK != DS18B20 && \
-    FEATURE5_TEMP & DS_MASK != DS18S20 && \
+    (FEATURE5_TEMP & DS_MASK) != DS18B20 && \
+    (FEATURE5_TEMP & DS_MASK) != DS18S20 && \
     (FEATURE5_TEMP < TEMPERATURE_FIRST || FEATURE5_TEMP > TEMPERATURE_LAST)
   #error "Configuration (Config.h): Setting FEATURE5_TEMP unknown, use OFF or TEMPERATURE device (from Constants.h)"
 #endif
 #if FEATURE6_TEMP != OFF && \
-    FEATURE6_TEMP & DS_MASK != DS18B20 && \
-    FEATURE6_TEMP & DS_MASK != DS18S20 && \
+    (FEATURE6_TEMP & DS_MASK) != DS18B20 && \
+    (FEATURE6_TEMP & DS_MASK) != DS18S20 && \
     (FEATURE6_TEMP < TEMPERATURE_FIRST || FEATURE6_TEMP > TEMPERATURE_LAST)
   #error "Configuration (Config.h): Setting FEATURE6_TEMP unknown, use OFF or TEMPERATURE device (from Constants.h)"
 #endif
 #if FEATURE7_TEMP != OFF && \
-    FEATURE7_TEMP & DS_MASK != DS18B20 && \
-    FEATURE7_TEMP & DS_MASK != DS18S20 && \
+    (FEATURE7_TEMP & DS_MASK) != DS18B20 && \
+    (FEATURE7_TEMP & DS_MASK) != DS18S20 && \
     (FEATURE7_TEMP < TEMPERATURE_FIRST || FEATURE7_TEMP > TEMPERATURE_LAST)
   #error "Configuration (Config.h): Setting FEATURE7_TEMP unknown, use OFF or TEMPERATURE device (from Constants.h)"
 #endif
 #if FEATURE8_TEMP != OFF && \
-    FEATURE8_TEMP & DS_MASK != DS18B20 && \
-    FEATURE8_TEMP & DS_MASK != DS18S20 && \
+    (FEATURE8_TEMP & DS_MASK) != DS18B20 && \
+    (FEATURE8_TEMP & DS_MASK) != DS18S20 && \
     (FEATURE8_TEMP < TEMPERATURE_FIRST || FEATURE8_TEMP > TEMPERATURE_LAST)
   #error "Configuration (Config.h): Setting FEATURE8_TEMP unknown, use OFF or TEMPERATURE device (from Constants.h)"
 #endif

@@ -20,7 +20,7 @@ IRAM_ATTR void axisWrapper8() { axisWrapper[7]->poll(); }
 IRAM_ATTR void axisWrapper9() { axisWrapper[8]->poll(); }
 
 // constructor
-Axis::Axis(uint8_t axisNumber, const AxisPins *pins, const AxisSettings *settings, const AxisMeasure axisMeasure) {
+Axis::Axis(uint8_t axisNumber, const AxisPins *pins, const AxisSettings *settings, const AxisMeasure axisMeasure, float targetTolerance) {
   axisPrefix[9] = '0' + axisNumber;
   this->axisNumber = axisNumber;
 
@@ -49,7 +49,9 @@ Axis::Axis(uint8_t axisNumber, const AxisPins *pins, const AxisSettings *setting
     case AXIS_MEASURE_MICRONS: strcpy(unitsStr, "um"); unitsRadians = false; break;
     case AXIS_MEASURE_DEGREES: strcpy(unitsStr, " deg"); unitsRadians = false; break;
     case AXIS_MEASURE_RADIANS: strcpy(unitsStr, " deg"); unitsRadians = true;  break;
-  } 
+  }
+
+  this->targetTolerance = targetTolerance;
 }
 
 // sets up the driver step/dir/enable pins and any associated driver mode control
@@ -69,16 +71,17 @@ bool Axis::init(Motor *motor) {
   if (AxisStoredSettingsSize < sizeof(AxisStoredSettings)) { nv.initError = true; DLF("ERR: Axis::init(); AxisStoredSettingsSize error"); return false; }
   uint16_t axesToRevert = nv.readUI(NV_AXIS_SETTINGS_REVERT);
   if (!(axesToRevert & 1)) bitSet(axesToRevert, axisNumber);
-  if (bitRead(axesToRevert, axisNumber)) {
+  uint16_t nvAxisSettingsBase = NV_AXIS_SETTINGS_BASE + (axisNumber - 1)*AxisStoredSettingsSize;
+  if (bitRead(axesToRevert, axisNumber) || nv.isNull(nvAxisSettingsBase, sizeof(AxisStoredSettings))) {
     V(axisPrefix); VLF("reverting settings to Config.h defaults");
     motor->getDefaultParameters(&settings.param1, &settings.param2, &settings.param3, &settings.param4, &settings.param5, &settings.param6);
-    nv.updateBytes(NV_AXIS_SETTINGS_BASE + (axisNumber - 1)*AxisStoredSettingsSize, &settings, sizeof(AxisStoredSettings));
+    nv.updateBytes(nvAxisSettingsBase, &settings, sizeof(AxisStoredSettings));
   }
   bitClear(axesToRevert, axisNumber);
   nv.write(NV_AXIS_SETTINGS_REVERT, axesToRevert);
 
   // read axis settings from NV
-  nv.readBytes(NV_AXIS_SETTINGS_BASE + (axisNumber - 1)*AxisStoredSettingsSize, &settings, sizeof(AxisStoredSettings));
+  nv.readBytes(nvAxisSettingsBase, &settings, sizeof(AxisStoredSettings));
   if (!validateAxisSettings(axisNumber, settings)) {
     DLF("ERR: Axis::init(); settings validation failed exiting!");
     return false;
@@ -123,6 +126,7 @@ bool Axis::init(Motor *motor) {
 }
 
 // enables or disables the associated step/dir driver
+// also calibrates the driver if this is the first time its been enabled
 void Axis::enable(bool state) {
   enabled = state;
   motor->enable(enabled & !poweredDown);
@@ -255,7 +259,7 @@ double Axis::getTargetCoordinate() {
 
 // returns true if at target
 bool Axis::atTarget() {
-  return labs(motor->getTargetDistanceSteps()) == 0;
+  return labs(motor->getTargetDistanceSteps()) <= targetTolerance*settings.stepsPerMeasure;
 }
 
 // returns true if within one second of the target at the backlash takeup rate
@@ -284,7 +288,10 @@ void Axis::setSlewAccelerationRate(float mpsps) {
 
 // set acceleration rate in seconds (for autoSlew)
 void Axis::setSlewAccelerationTime(float seconds) {
-  if (autoRate == AR_NONE) slewAccelTime = seconds;
+  if (autoRate == AR_NONE) {
+    if (seconds < 0.1F) seconds = 0.1F;
+    slewAccelTime = seconds;
+  }
 }
 
 // set acceleration for emergency stop movement in "measures" per second per second
@@ -340,6 +347,7 @@ CommandError Axis::autoSlew(Direction direction, float frequency) {
 
   if (!isnan(frequency)) setFrequencySlew(frequency);
 
+  V(axisPrefix);
   if (autoRate == AR_NONE) {
     motor->setSynchronized(true);
     motor->setSlewing(true);
@@ -565,6 +573,13 @@ void Axis::poll() {
 
   // keep associated motor updated
   motor->poll();
+
+  // respond to the motor disabling itself
+  if (autoRate != AR_NONE && !motor->enabled) {
+    autoRate = AR_NONE;
+    freq = 0.0F;
+    V(axisPrefix); VLF("motion stopped, motor disabled!");
+  }
 }
 
 // set minimum slew frequency in "measures" (radians, microns, etc.) per second
@@ -595,7 +610,7 @@ void Axis::setFrequencySlew(float frequency) {
 
 // set frequency in "measures" (degrees, microns, etc.) per second (0 stops motion)
 void Axis::setFrequency(float frequency) {
-  if (powerDownStandstill && frequency == 0.0F) {
+  if (powerDownStandstill && frequency == 0.0F && baseFreq == 0.0F) {
     if (!poweredDown) {
       if (!powerDownOverride || (long)(millis() - powerDownOverrideEnds) > 0) {
         powerDownOverride = false;
@@ -662,14 +677,14 @@ bool Axis::motionError(Direction direction) {
 
   if (direction == DIR_FORWARD || direction == DIR_BOTH) {
     result = getInstrumentCoordinateSteps() > lroundf(0.9F*INT32_MAX) ||
-             (limitsCheck && getInstrumentCoordinate() > settings.limits.max) ||
+             (limitsCheck && homingStage == HOME_NONE && getInstrumentCoordinate() > settings.limits.max) ||
              (!commonMinMaxSense && errors.maxLimitSensed);
     if (result == true && result != lastErrorResult) { V(axisPrefix); VLF("motion error forward limit"); }
   } else
 
   if (direction == DIR_REVERSE || direction == DIR_BOTH) {
     result = getInstrumentCoordinateSteps() < lroundf(0.9F*INT32_MIN) ||
-             (limitsCheck && getInstrumentCoordinate() < settings.limits.min) ||
+             (limitsCheck && homingStage == HOME_NONE && getInstrumentCoordinate() < settings.limits.min) ||
              (!commonMinMaxSense && errors.minLimitSensed);
     if (result == true && result != lastErrorResult) { V(axisPrefix); VLF("motion error reverse limit"); }
   }

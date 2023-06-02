@@ -4,23 +4,27 @@
 // This is for fast processors with hardware FP
 #define HAL_FAST_PROCESSOR
 
-// 1/200 second sidereal timer
-#define HAL_FRACTIONAL_SEC 200.0F
+// Base rate for critical task timing
+#define HAL_FRACTIONAL_SEC 100.0F
 
 // Analog read and write
 #ifndef ANALOG_READ_RANGE
   #define ANALOG_READ_RANGE 4095
 #endif
 #ifndef ANALOG_WRITE_RANGE
-  #define ANALOG_WRITE_RANGE 255
+  #define ANALOG_WRITE_RANGE 1023
 #endif
 #ifndef ANALOG_WRITE_PWM_BITS
-  #define ANALOG_WRITE_PWM_BITS 8
+  #define ANALOG_WRITE_PWM_BITS 10
 #endif
 
 // Lower limit (fastest) step rate in uS for this platform (in SQW mode) and width of step pulse
-#define HAL_MAXRATE_LOWER_LIMIT 16
-#define HAL_PULSE_WIDTH 200  // in ns, measured 1/18/22
+#if !defined(ESP_ARDUINO_VERSION) || ESP_ARDUINO_VERSION <= 131072 + 0 // version 2.0.0
+  #define HAL_MAXRATE_LOWER_LIMIT 16
+#else
+  #define HAL_MAXRATE_LOWER_LIMIT 40
+#endif
+#define HAL_PULSE_WIDTH 200  // in ns, measured 1/18/22 (ESP32 v2.0.0)
 
 // New symbol for the default I2C port -------------------------------------------------------------
 #include <Wire.h>
@@ -34,7 +38,7 @@
   #define E2END 4095
   #define NV_ENDURANCE NVE_LOW
   #include "../lib/nv/NV_ESP.h"
-  #define HAL_NV_INIT() nv.init(E2END + 1, false, 5000, false);
+  #define HAL_NV_INIT() nv.init(E2END + 1, false, 5000, false)
 #endif
 
 //--------------------------------------------------------------------------------------------------
@@ -65,13 +69,26 @@
     } \
   }
 #else
-  #define HAL_INIT() { \
-    SERIAL_BT_BEGIN(); \
-    if (I2C_SDA_PIN != OFF && I2C_SCL_PIN != OFF) { \
-      HAL_Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN); \
-      HAL_Wire.setClock(HAL_WIRE_CLOCK); \
-    } \
-  }
+  #ifdef ANALOG_WRITE_PWM_FREQUENCY
+    #define HAL_INIT() { \
+      analogWriteResolution(ANALOG_WRITE_PWM_BITS); \
+      analogWriteFrequency(ANALOG_WRITE_PWM_FREQUENCY); \
+      SERIAL_BT_BEGIN(); \
+      if (I2C_SDA_PIN != OFF && I2C_SCL_PIN != OFF) { \
+        HAL_Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN); \
+        HAL_Wire.setClock(HAL_WIRE_CLOCK); \
+      } \
+    }
+  #else
+    #define HAL_INIT() { \
+      analogWriteResolution(ANALOG_WRITE_PWM_BITS); \
+      SERIAL_BT_BEGIN(); \
+      if (I2C_SDA_PIN != OFF && I2C_SCL_PIN != OFF) { \
+        HAL_Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN); \
+        HAL_Wire.setClock(HAL_WIRE_CLOCK); \
+      } \
+    }
+  #endif
 #endif
 
 //--------------------------------------------------------------------------------------------------
@@ -90,6 +107,11 @@
 // a really short fixed delay (none needed)
 #define HAL_DELAY_25NS()
 
-// stand-in for delayNanoseconds()
-#define delayNanoseconds(ns) delayMicroseconds(ceilf(ns/1000.0F))
-
+#ifdef ARDUINO_ESP32C3_DEV
+  // stand-in for delayNanoseconds(), assumes 80MHz clock
+  #define delayNanoseconds(ns) { unsigned int c = ESP.getCycleCount() + ns/12.5F; do {} while ((int)(ESP.getCycleCount() - c) < 0); }
+#else
+  // stand-in for delayNanoseconds(), assumes 240MHz clock
+  #include "xtensa/core-macros.h"
+  #define delayNanoseconds(ns) { unsigned int c = xthal_get_ccount() + ns/4.166F; do {} while ((int)(xthal_get_ccount() - c) < 0); }
+#endif

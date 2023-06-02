@@ -8,7 +8,7 @@ bool EthernetManager::init() {
     #ifdef NV_ETHERNET_SETTINGS_BASE
       if (EthernetSettingsSize < sizeof(EthernetSettings)) { nv.initError = true; DL("ERR: EthernetManager::init(); EthernetSettingsSize error"); }
 
-      if (!nv.hasValidKey()) {
+      if (!nv.hasValidKey() || nv.isNull(NV_ETHERNET_SETTINGS_BASE, sizeof(EthernetSettings))) {
         VLF("MSG: Ethernet, writing defaults to NV");
         nv.writeBytes(NV_ETHERNET_SETTINGS_BASE, &settings, sizeof(EthernetSettings));
       }
@@ -49,7 +49,22 @@ bool EthernetManager::init() {
 }
 
 void EthernetManager::restart() {
-  Ethernet.begin(settings.mac, settings.ip, settings.dns, settings.gw, settings.sn);
+  if (ETHERNET_RESET_PIN != OFF) {
+    VF("MSG: Ethernet, device ETHERNET_RESET_PIN ("); V(ETHERNET_RESET_PIN); VL(")");
+    pinMode(ETHERNET_RESET_PIN, OUTPUT); 
+    digitalWrite(ETHERNET_RESET_PIN, LOW);
+    delay(1000);
+    digitalWrite(ETHERNET_RESET_PIN, HIGH);
+    delay(1000);
+  }
+
+  VLF("MSG: Ethernet, restart");
+  if (settings.dhcpEnabled) {
+    active = Ethernet.begin(settings.mac);
+  } else {
+    Ethernet.begin(settings.mac, settings.ip, settings.dns, settings.gw, settings.sn);
+    active = true;
+  }
 }
 
 void EthernetManager::writeSettings() {

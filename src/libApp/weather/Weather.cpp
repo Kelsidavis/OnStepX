@@ -8,7 +8,7 @@
 extern bool xBusy;
 
 #if WEATHER == BME280 || WEATHER == BME280_0x76 || WEATHER == BME280_SPI
-  #include <Adafruit_BME280.h>          // https://github.com/adafruit/Adafruit_BME280_Library/tree/156a0537d6b21aaab1d1f104a7001a38ca1ffce3
+  #include <Adafruit_BME280.h>          // https://github.com/adafruit/Adafruit_BME280_Library
                                         // and https://github.com/adafruit/Adafruit_Sensor
   #if WEATHER == BME280
     #define BME_ADDRESS 0x77
@@ -44,13 +44,25 @@ bool Weather::init() {
   #if WEATHER != OFF
     success = false;
     #if WEATHER == BME280 || WEATHER == BME280_0x76
-      if (bmx.begin(BME_ADDRESS, &HAL_Wire)) { weatherSensor = WS_BME280; success = true; } else { DF("WRN: Weather.init(), BME280 (I2C 0x"); if (DEBUG != OFF) SERIAL_DEBUG.print(BME_ADDRESS, HEX); DLF(") not found"); }
+      if (bmx.begin(BME_ADDRESS, &HAL_Wire)) {
+        bmx.setSampling(Adafruit_BME280::MODE_FORCED, Adafruit_BME280::SAMPLING_X1, Adafruit_BME280::SAMPLING_X1, Adafruit_BME280::SAMPLING_X1, Adafruit_BME280::FILTER_OFF);
+        weatherSensor = WS_BME280; success = true;
+      } else { DF("WRN: Weather.init(), BME280 (I2C 0x"); if (DEBUG != OFF) SERIAL_DEBUG.print(BME_ADDRESS, HEX); DLF(") not found"); }
     #elif WEATHER == BMP280 || WEATHER == BMP280_0x76
-      if (bmx.begin(BMP_ADDRESS)) { weatherSensor = WS_BMP280; success = true; } else { DF("WRN: Weather.init(), BMP280 (I2C 0x"); if (DEBUG != OFF) SERIAL_DEBUG.print(BMP_ADDRESS, HEX); DLF(") not found"); }
+      if (bmx.begin(BMP_ADDRESS)) {
+        bmx.setSampling(Adafruit_BMP280::MODE_FORCED, Adafruit_BMP280::SAMPLING_X1, Adafruit_BMP280::SAMPLING_X1, Adafruit_BMP280::FILTER_OFF);
+        weatherSensor = WS_BMP280; success = true;
+      } else { DF("WRN: Weather.init(), BMP280 (I2C 0x"); if (DEBUG != OFF) SERIAL_DEBUG.print(BMP_ADDRESS, HEX); DLF(") not found"); }
     #elif WEATHER == BME280_SPI
-      if (bmx.begin()) { weatherSensor = WS_BME280; success = true; } else { DLF("WRN: Weather.init(), BME280 (SPI) not found"); }
+      if (bmx.begin()) {
+        bmx.setSampling(Adafruit_BME280::MODE_FORCED, Adafruit_BME280::SAMPLING_X1, Adafruit_BME280::SAMPLING_X1, Adafruit_BME280::SAMPLING_X1, Adafruit_BME280::FILTER_OFF);
+        weatherSensor = WS_BME280; success = true;
+      } else { DLF("WRN: Weather.init(), BME280 (SPI) not found"); }
     #elif WEATHER == BMP280_SPI
-      if (bmx.begin()) { weatherSensor = WS_BMP280; success = true; } else { DLF("WRN: Weather.init(), BMP280 (SPI) not found"); }
+      if (bmx.begin()) {
+        bmx.setSampling(Adafruit_BMP280::MODE_FORCED, Adafruit_BMP280::SAMPLING_X1, Adafruit_BMP280::SAMPLING_X1, Adafruit_BMP280::FILTER_OFF);
+        weatherSensor = WS_BMP280; success = true;
+      } else { DLF("WRN: Weather.init(), BMP280 (SPI) not found"); }
     #else
       #error "Configuration: Setting WEATHER unknown sensor value!"
     #endif
@@ -89,6 +101,7 @@ void Weather::poll() {
           phase = 0;
         break;
       }
+      bmx.takeForcedMeasurement();
 
       // apply a 10 sample rolling average to the ambient temperature
       static uint8_t nanCount = 0;
@@ -126,7 +139,7 @@ float Weather::getTemperature() {
 // set temperature in deg. C
 bool Weather::setTemperature(float t) {
   if (weatherSensor == WS_NONE) { 
-    if (t >= -100.0 && t < 100.0) temperature = t; else return false;
+    if (t >= -100.0 && t < 100.0) { temperature = t; averageTemperature = t; } else return false;
   }
   return true;
 }
