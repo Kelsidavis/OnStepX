@@ -67,12 +67,14 @@ bool Telescope::command(char reply[], char command[], char parameter[], bool *su
   if (command[0] == 'B' && (command[1] == '+' || command[1] == '-') && parameter[0] == 0)  {
     #if RETICLE_LED_DEFAULT >= 0 && RETICLE_LED_PIN != OFF
       int scale;
-      if (reticleBrightness > 255-8) scale = 1; else
-      if (reticleBrightness > 255-32) scale = 4; else
-      if (reticleBrightness > 255-64) scale = 12; else
-      if (reticleBrightness > 255-128) scale = 32; else scale = 64;
-      if (command[1] == '-') reticleBrightness += scale;  if (reticleBrightness > 255) reticleBrightness = 255;
-      if (command[1] == '+') reticleBrightness -= scale;  if (reticleBrightness < 0)   reticleBrightness = 0;
+      if (reticleBrightness > 255 - 8) scale = 1; else
+      if (reticleBrightness > 255 - 32) scale = 4; else
+      if (reticleBrightness > 255 - 64) scale = 12; else
+      if (reticleBrightness > 255 - 128) scale = 32; else scale = 64;
+      if (command[1] == '-') reticleBrightness += scale;
+      if (reticleBrightness > 255) reticleBrightness = 255;
+      if (command[1] == '+') reticleBrightness -= scale;
+      if (reticleBrightness < 0)   reticleBrightness = 0;
       analogWrite(RETICLE_LED_PIN, analog8BitToAnalogRange(RETICLE_LED_INVERT == ON ? 255 - reticleBrightness : reticleBrightness));
       #if RETICLE_LED_MEMORY == ON
         nv.write(NV_TELESCOPE_SETTINGS_BASE, reticleBrightness);
@@ -116,13 +118,21 @@ bool Telescope::command(char reply[], char command[], char parameter[], bool *su
     //            Return: 1 on completion (after up to one minute from start of command.)
     #if SERIAL_B_ESP_FLASHING == ON
       if (command[1] == 'S' && parameter[0] == 'P' && parameter[1] == 'F' && parameter[2] == 'L' && parameter[3] == 'A' && parameter[4] == 'S' && parameter[5] == 'H' && parameter[6] == 0) {
-        SERIAL_A.println("The ESP8266 will now be placed in flash upload mode (at 115200 Baud.)");
+        SERIAL_A.println("The SWS microcontroller will now be placed in flash upload mode (at 115200 Baud.)");
         SERIAL_A.println("Arduino's 'Tools -> Upload Speed' should be set to 115200 Baud.");
         SERIAL_A.println("Waiting for data, you have one minute to start the upload.");
         tasks.yield(1000);
         addonFlasher.go();
-        SERIAL_A.println("ESP8266 reset and in run mode, resuming operation...");
+        SERIAL_A.println("SWS microcontroller reset and in run mode, resuming operation...");
         tasks.yield(1000);
+      } else
+    #elif ADDON_SELECT_PIN != OFF
+      if (command[1] == 'S' && parameter[0] == 'P' && parameter[1] == 'F' && parameter[2] == 'L' && parameter[3] == 'A' && parameter[4] == 'S' && parameter[5] == 'H' && parameter[6] == 0) {
+        SERIAL_A.println("The SWS microcontroller will now be connected to USB for flashing firmware.");
+        SERIAL_A.println("Once done uploading power cycle or reboot to restore normal operation.");
+        tasks.yield(1000);
+        pinModeEx(ADDON_SELECT_PIN, OUTPUT);
+        digitalWriteEx(ADDON_SELECT_PIN, LOW);
       } else
     #endif
     *commandError = CE_CMD_UNKNOWN;
@@ -133,18 +143,21 @@ bool Telescope::command(char reply[], char command[], char parameter[], bool *su
     //            Returns: MTH DD YYYY#
     // :GVM#      General Message
     //            Returns: s# (where s is a string up to 16 chars)
-    // :GVN#      Get OnStepX Firmware Number
+    // :GVN#      Get Firmware Number
     //            Returns: M.mp#
-    // :GVP#      Get OnStepX Product Name
+    // :GVP#      Get Product Name
     //            Returns: s#
-    // :GVT#      Get OnStepX Firmware Time
+    // :GVT#      Get Firmware Time
     //            Returns: HH:MM:SS#
+    // :GVC#      Get Firmware Config Name
+    //            Returns: s#
     if (command[1] == 'V' && parameter[1] == 0) {
       if (parameter[0] == 'D') strcpy(reply, firmware.date); else
       if (parameter[0] == 'M') sprintf(reply, "%s %i.%02i%s", firmware.name, firmware.version.major, firmware.version.minor, firmware.version.patch); else
       if (parameter[0] == 'N') sprintf(reply, "%i.%02i%s", firmware.version.major, firmware.version.minor, firmware.version.patch); else
       if (parameter[0] == 'P') strcpy(reply, firmware.name); else
-      if (parameter[0] == 'T') strcpy(reply, firmware.time); else *commandError = CE_CMD_UNKNOWN;
+      if (parameter[0] == 'T') strcpy(reply, firmware.time); else
+      if (parameter[0] == 'C') strncpy(reply, CONFIG_NAME, 40); else *commandError = CE_CMD_UNKNOWN;
       *numericReply = false;
     } else
 
@@ -176,6 +189,18 @@ bool Telescope::command(char reply[], char command[], char parameter[], bool *su
         if (parameter[1] == 'E') {
           sprintF(reply, "%3.1f", weather.getDewPoint());
           *numericReply = false;
+        } else
+
+        // :GX9F#     MCU temperature in deg. C
+        //            Returns: +/-n.n
+        if (parameter[1] == 'F') {
+          if (!isnan(telescope.mcuTemperature)) {
+            sprintF(reply, "%1.0f", telescope.mcuTemperature);
+            *numericReply = false;
+          } else {
+            *numericReply = true;
+            *commandError = CE_0;
+          }
         } else return false;
       } else
 

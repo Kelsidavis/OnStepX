@@ -13,7 +13,7 @@
 #include "../StepDirDriver.h"
 
 #ifndef DRIVER_TMC_STEPPER_AUTOGRAD
-  #define DRIVER_TMC_STEPPER_AUTOGRAD true
+  #define DRIVER_TMC_STEPPER_AUTOGRAD false
 #endif
 
 class StepDirTmcSPI : public StepDirDriver {
@@ -49,7 +49,7 @@ class StepDirTmcSPI : public StepDirDriver {
     bool enable(bool state);
 
     // calibrate the motor driver if required
-    void calibrate();
+    void calibrateDriver();
 
     TMCStepper *driver;
 
@@ -59,6 +59,13 @@ class StepDirTmcSPI : public StepDirDriver {
 
     // set the decay mode STEALTH_CHOP or SPREAD_CYCLE
     void setDecayMode(int decayMode);
+
+    // set peak current and hold current multiplier
+    inline void current(float mA, float mult) {
+      if (settings.model == TMC2130) { ((TMC2130Stepper*)driver)->rms_current(mA*0.7071F, mult); } else
+      if (settings.model == TMC5160) { ((TMC5160Stepper*)driver)->rms_current(mA*0.7071F, mult); } else
+      if (settings.model == TMC5161) { ((TMC5161Stepper*)driver)->rms_current(mA*0.7071F, mult); }
+    }
 };
 
 #endif

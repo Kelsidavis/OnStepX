@@ -4,7 +4,6 @@
 #include "Axis.h"
 
 #include "../tasks/OnTask.h"
-#include "../sense/Sense.h"
 
 #ifdef MOTOR_PRESENT
 
@@ -57,6 +56,8 @@ Axis::Axis(uint8_t axisNumber, const AxisPins *pins, const AxisSettings *setting
 // sets up the driver step/dir/enable pins and any associated driver mode control
 bool Axis::init(Motor *motor) {
   this->motor = motor;
+  motor->getDefaultParameters(&settings.param1, &settings.param2, &settings.param3, &settings.param4, &settings.param5, &settings.param6);
+  AxisStoredSettings defaultSettings = settings;
 
   // check for reverting axis settings in NV
   if (!nv.hasValidKey()) {
@@ -74,7 +75,6 @@ bool Axis::init(Motor *motor) {
   uint16_t nvAxisSettingsBase = NV_AXIS_SETTINGS_BASE + (axisNumber - 1)*AxisStoredSettingsSize;
   if (bitRead(axesToRevert, axisNumber) || nv.isNull(nvAxisSettingsBase, sizeof(AxisStoredSettings))) {
     V(axisPrefix); VLF("reverting settings to Config.h defaults");
-    motor->getDefaultParameters(&settings.param1, &settings.param2, &settings.param3, &settings.param4, &settings.param5, &settings.param6);
     nv.updateBytes(nvAxisSettingsBase, &settings, sizeof(AxisStoredSettings));
   }
   bitClear(axesToRevert, axisNumber);
@@ -83,8 +83,13 @@ bool Axis::init(Motor *motor) {
   // read axis settings from NV
   nv.readBytes(nvAxisSettingsBase, &settings, sizeof(AxisStoredSettings));
   if (!validateAxisSettings(axisNumber, settings)) {
-    DLF("ERR: Axis::init(); settings validation failed exiting!");
-    return false;
+    V(axisPrefix); VLF("settings validation failed reverting settings to Config.h defaults");
+    settings = defaultSettings;
+    nv.updateBytes(nvAxisSettingsBase, &settings, sizeof(AxisStoredSettings));
+    if (!validateAxisSettings(axisNumber, settings)) {
+      DLF("ERR: Axis::init(); settings validation still failed exiting!");
+      return false;
+    }
   }
 
   #if DEBUG == VERBOSE
@@ -314,6 +319,7 @@ CommandError Axis::autoGoto(float frequency) {
   if (!enabled) return CE_SLEW_ERR_IN_STANDBY;
   if (autoRate != AR_NONE) return CE_SLEW_IN_SLEW;
   if (motionError(DIR_BOTH)) return CE_SLEW_ERR_OUTSIDE_LIMITS;
+  if (motorFault()) return CE_SLEW_ERR_HARDWARE_FAULT;
 
   if (!isnan(frequency)) setFrequencySlew(frequency);
 
@@ -342,8 +348,9 @@ CommandError Axis::autoGoto(float frequency) {
 CommandError Axis::autoSlew(Direction direction, float frequency) {
   if (!enabled) return CE_SLEW_ERR_IN_STANDBY;
   if (autoRate == AR_RATE_BY_DISTANCE) return CE_SLEW_IN_SLEW;
-  if (motionError(direction)) return CE_SLEW_ERR_OUTSIDE_LIMITS;
   if (direction != DIR_FORWARD && direction != DIR_REVERSE) return CE_SLEW_ERR_UNSPECIFIED;
+  if (motionError(direction)) return CE_SLEW_ERR_OUTSIDE_LIMITS;
+  if (motorFault()) return CE_SLEW_ERR_HARDWARE_FAULT;
 
   if (!isnan(frequency)) setFrequencySlew(frequency);
 
@@ -384,6 +391,7 @@ CommandError Axis::autoSlewHome(unsigned long timeout) {
   if (!enabled) return CE_SLEW_ERR_IN_STANDBY;
   if (autoRate != AR_NONE) return CE_SLEW_IN_SLEW;
   if (motionError(DIR_BOTH)) return CE_SLEW_ERR_OUTSIDE_LIMITS;
+  if (motorFault()) return CE_SLEW_ERR_HARDWARE_FAULT;
 
   if (pins->axisSense.homeTrigger != OFF) {
     motor->setSynchronized(true);
@@ -491,7 +499,12 @@ void Axis::poll() {
 
     if (autoRate != AR_RATE_BY_TIME_ABORT) {
       if (motionError(motor->getDirection())) {
-        V(axisPrefix); VLF("motionError");
+        V(axisPrefix); VLF("motion error");
+        autoSlewAbort();
+        return;
+      }
+      if (motorFault()) {
+        V(axisPrefix); VLF("motor fault");
         autoSlewAbort();
         return;
       }
@@ -565,7 +578,7 @@ void Axis::poll() {
     } else freq = 0.0F;
   } else {
     freq = 0.0F;
-    if (commonMinMaxSensed || motionError(DIR_BOTH)) baseFreq = 0.0F;
+    if (commonMinMaxSensed || motionError(DIR_BOTH) || motorFault()) baseFreq = 0.0F;
   }
   Y;
 
@@ -610,6 +623,7 @@ void Axis::setFrequencySlew(float frequency) {
 
 // set frequency in "measures" (degrees, microns, etc.) per second (0 stops motion)
 void Axis::setFrequency(float frequency) {
+  frequency *= scaleFreq;
   if (powerDownStandstill && frequency == 0.0F && baseFreq == 0.0F) {
     if (!poweredDown) {
       if (!powerDownOverride || (long)(millis() - powerDownOverrideEnds) > 0) {
@@ -671,8 +685,6 @@ void Axis::setMotionLimitsCheck(bool state) {
 
 // checks for an error that would disallow motion in a given direction or DIR_BOTH for either direction
 bool Axis::motionError(Direction direction) {
-  if (fault()) return true;
-
   bool result = false;
 
   if (direction == DIR_FORWARD || direction == DIR_BOTH) {

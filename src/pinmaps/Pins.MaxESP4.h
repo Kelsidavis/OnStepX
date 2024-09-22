@@ -4,7 +4,6 @@
 
 #if defined(ESP32)
 
-// Serial ports (see Pins.defaults.h for SERIAL_A)
 // Serial0: RX Pin GPIO3, TX Pin GPIO1 (to USB serial adapter)
 // Serial1: RX1 Pin GPIO10, TX1 Pin GPIO9 (on SPI Flash pins, must be moved to be used)
 // Serial2: RX2 Pin GPIO16, TX2 Pin GPIO17
@@ -17,7 +16,7 @@
 #endif
 
 // Use the following settings for any TMC UART driver (TMC2209) that may be present
-#if defined(STEP_DIR_TMC_UART_PRESENT)
+#if defined(STEP_DIR_TMC_UART_PRESENT) || defined(SERVO_TMC2209_PRESENT)
   #define SERIAL_TMC_HARDWARE_UART
   #define SERIAL_TMC            Serial1          // Use a single hardware serial port to up to four drivers
   #define SERIAL_TMC_BAUD       460800           // Baud rate
@@ -95,8 +94,6 @@
 #ifndef AXIS1_SENSE_HOME_PIN
   #define AXIS1_SENSE_HOME_PIN  AUX3_PIN
 #endif
-#define AXIS1_SERVO_PH1_PIN     AXIS1_DIR_PIN
-#define AXIS1_SERVO_PH2_PIN     AXIS1_STEP_PIN
 
 // Axis2 Dec/Alt step/dir driver
 #define AXIS2_ENABLE_PIN        SHARED
@@ -109,8 +106,9 @@
 #ifndef AXIS2_SENSE_HOME_PIN
   #define AXIS2_SENSE_HOME_PIN  AUX4_PIN
 #endif
-#define AXIS2_SERVO_PH1_PIN     AXIS2_DIR_PIN
-#define AXIS2_SERVO_PH2_PIN     AXIS2_STEP_PIN
+#ifndef AXIS2_ENCODER_B_PIN
+  #define AXIS2_ENCODER_B_PIN   AUX2_PIN
+#endif
 
 // For rotator stepper driver
 #define AXIS3_ENABLE_PIN        SHARED
@@ -120,8 +118,6 @@
 #define AXIS3_M3_PIN            OFF              // UART RX
 #define AXIS3_STEP_PIN          2                // [must be low at boot 2]
 #define AXIS3_DIR_PIN           15
-#define AXIS1_ENCODER_A_PIN     AXIS3_STEP_PIN
-#define AXIS1_ENCODER_B_PIN     AXIS3_DIR_PIN
 
 // For focuser1 stepper driver
 #define AXIS4_ENABLE_PIN        SHARED
@@ -131,8 +127,6 @@
 #define AXIS4_M3_PIN            OFF              // UART RX
 #define AXIS4_STEP_PIN          19
 #define AXIS4_DIR_PIN           15
-#define AXIS2_ENCODER_A_PIN     AXIS4_STEP_PIN
-#define AXIS2_ENCODER_B_PIN     AUX2_PIN
 
 // For focuser2 stepper driver
 #define AXIS5_ENABLE_PIN        SHARED

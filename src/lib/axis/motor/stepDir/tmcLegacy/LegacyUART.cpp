@@ -28,14 +28,14 @@ void StepDirTmcUART::init(float param1, float param2, float param3, float param4
     if (settings.currentHold == OFF) settings.currentHold = lround(settings.currentRun/2.0F);
   } else {
     // set current defaults for TMC drivers
-    settings.currentRun = 2500;
+    settings.currentRun = 300;
     settings.currentGoto = settings.currentRun;
     settings.currentHold = lround(settings.currentRun/2.0F);
   }
 
   VF("MSG: StepDirDriver"); V(axisNumber); VF(", TMC ");
   if (settings.currentRun == OFF) {
-    VLF("current control OFF (set by Vref)");
+    VLF("current control OFF (300mA)");
   } else {
     VF("Ihold="); V(settings.currentHold); VF("mA, ");
     VF("Irun="); V(settings.currentRun); VF("mA, ");
@@ -65,7 +65,7 @@ void StepDirTmcUART::init(float param1, float param2, float param3, float param4
     #endif
 
     VF("MSG: StepDirDriver"); V(axisNumber); VF(", TMC ");
-    VF("HW UART driver pins rx="); V(SERIAL_TMC_RX); VF(", tx="); V(SERIAL_TMC_TX); VF(", baud="); V(SERIAL_TMC_BAUD); VLF("bps");
+    VF("HW UART driver pins rx="); V(SERIAL_TMC_RX); VF(", tx="); V(SERIAL_TMC_TX); VF(", baud="); V(SERIAL_TMC_BAUD); VLF(" bps");
     #if SERIAL_TMC_INVERT == ON
       driver->setup(SERIAL_TMC, SERIAL_TMC_BAUD, SERIAL_TMC_ADDRESS_MAP(axisNumber - 1), SERIAL_TMC_RX, SERIAL_TMC_TX, true);
     #else
@@ -81,7 +81,7 @@ void StepDirTmcUART::init(float param1, float param2, float param3, float param4
       rxPin = OFF;
     #endif
     VF("MSG: StepDirDriver"); V(axisNumber); VF(", TMC ");
-    VF("SW UART driver pins rx="); V(rxPin); VF(", tx="); V(Pins->tx); VF(", baud="); V(SERIAL_TMC_BAUD); VLF("bps");
+    VF("SW UART driver pins rx="); V(rxPin); VF(", tx="); V(Pins->tx); VF(", baud="); V(SERIAL_TMC_BAUD); VLF(" bps");
     driver->setup(SERIAL_TMC_BAUD, SERIAL_TMC_ADDRESS_MAP(axisNumber - 1), rxPin, Pins->tx);
   #endif
 
@@ -92,6 +92,9 @@ void StepDirTmcUART::init(float param1, float param2, float param3, float param4
       VF("WRN: StepDirDriver"); V(axisNumber); VLF(", TMC UART driver detection failed");
     }
   }
+
+  driver->useExternalSenseResistors();
+  driver->enableAnalogCurrentScaling();
 
   driver->enable();
   driver->moveUsingStepDirInterface();
@@ -125,7 +128,7 @@ void StepDirTmcUART::init(float param1, float param2, float param3, float param4
 
 // validate driver parameters
 bool StepDirTmcUART::validateParameters(float param1, float param2, float param3, float param4, float param5, float param6) {
-  StepDirDriver::validateParameters(param1, param2, param3, param4, param5, param6);
+  if (!StepDirDriver::validateParameters(param1, param2, param3, param4, param5, param6)) return false;
 
   int maxCurrent;
   if (settings.model == TMC2226) maxCurrent = 2800; else // allow enough range for TMC2209 and TMC2226
@@ -191,6 +194,7 @@ void StepDirTmcUART::updateStatus() {
       status.outputB.shortToGround = (bool)tmc2209Status.short_to_ground_b || (bool)tmc2209Status.low_side_short_b;
       status.outputB.openLoad      = (bool)tmc2209Status.open_load_b;
       status.overTemperatureWarning = (bool)tmc2209Status.over_temperature_warning;
+      status.overTemperature       = (bool)tmc2209Status.over_temperature_shutdown;
       status.standstill            = (bool)tmc2209Status.standstill;
 
       // open load indication is not reliable in standstill
@@ -224,7 +228,7 @@ bool StepDirTmcUART::enable(bool state) {
 }
 
 // calibrate the motor driver if required
-void StepDirTmcUART::calibrate() {
+void StepDirTmcUART::calibrateDriver() {
   if (settings.decay == STEALTHCHOP || settings.decaySlewing == STEALTHCHOP) {
     VF("MSG: StepDirDriver"); V(axisNumber); VL(", TMC standstill automatic current calibration");
     driver->setRunCurrent(settings.currentRun/25); // current in %

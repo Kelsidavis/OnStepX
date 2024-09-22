@@ -29,6 +29,8 @@
 bool xBusy = false;
 InitError initError;
 
+void mcuTempWrapper() { telescope.mcuTemperature = (telescope.mcuTemperature*9.0F + HAL_TEMP())/10.0F; }
+
 #if STATUS_LED != OFF && STATUS_LED_PIN != OFF
   void statusFlash() {
     static uint8_t cycle = 0;
@@ -140,6 +142,11 @@ void Telescope::init(const char *fwName, int fwMajor, int fwMinor, const char *f
     addonFlasher.init();
   #endif
 
+  mcuTemperature = HAL_TEMP();
+  if (!isnan(mcuTemperature)) {
+    VF("MSG: Telescope, start MCU temperature monitor task (rate 500ms priority 7)... ");
+    if (tasks.add(500, 0, true, 6, mcuTempWrapper, "McuTemp")) { VLF("success"); } else { VLF("FAILED!"); }
+  }
   weather.init();
   temperature.init();
 
@@ -148,6 +155,10 @@ void Telescope::init(const char *fwName, int fwMajor, int fwMinor, const char *f
   #endif
 
   #ifdef MOUNT_PRESENT
+    #if defined(ESP32) && STATUS_BUZZER >= 0
+      // hack to trigger one-time ESP32 code debug message to get it out of the way early
+      tone(STATUS_BUZZER_PIN, STATUS_BUZZER, 1);
+    #endif
     mount.init();
     mountStatus.init();
   #endif
@@ -159,6 +170,8 @@ void Telescope::init(const char *fwName, int fwMajor, int fwMinor, const char *f
   #ifdef FOCUSER_PRESENT
     focuser.init();
   #endif
+
+  delay(1000);
 
   #ifdef SHARED_ENABLE_PIN
     digitalWriteEx(SHARED_ENABLE_PIN, SHARED_ENABLE_STATE);

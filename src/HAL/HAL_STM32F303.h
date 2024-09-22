@@ -6,8 +6,8 @@
 
 #define HAL_FAST_PROCESSOR
 
-#define HAL_FRACTIONAL_SEC 200.0F
-// Base rate for critical task timing
+// Base rate for critical task timing (0.0057s = 0.09", 0.2 sec/day)
+#define HAL_FRACTIONAL_SEC 175.4385965F
 
 // Analog read and write
 #ifndef ANALOG_READ_RANGE
@@ -21,7 +21,7 @@
 #endif
 
 // Lower limit (fastest) step rate in uS for this platform (in SQW mode) and width of step pulse
-#define HAL_MAXRATE_LOWER_LIMIT 16   // assumes optimization set to Fastest (-O3)
+#define HAL_MAXRATE_LOWER_LIMIT 20   // assumes optimization set to Fastest (-O3)
 #define HAL_PULSE_WIDTH         450  // in ns, estimated
 
 #include <HardwareTimer.h>

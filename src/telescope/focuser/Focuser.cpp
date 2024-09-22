@@ -13,6 +13,7 @@
 
 typedef struct FocuserConfiguration {
   bool present;
+  int32_t  homeDefault;
   uint16_t slewRateDesired;
   uint8_t  slewRateMinimum;
   float    accelerationTime;
@@ -23,22 +24,22 @@ typedef struct FocuserConfiguration {
 
 const FocuserConfiguration configuration[] = {
 #if FOCUSER_MAX >= 1
-  {AXIS4_DRIVER_MODEL != OFF, AXIS4_SLEW_RATE_BASE_DESIRED, AXIS4_SLEW_RATE_MINIMUM, AXIS4_ACCELERATION_TIME, AXIS4_RAPID_STOP_TIME, AXIS4_POWER_DOWN == ON, AXIS4_POWER_DOWN_TIME},
+  {AXIS4_DRIVER_MODEL != OFF, AXIS4_HOME_DEFAULT, AXIS4_SLEW_RATE_BASE_DESIRED, AXIS4_SLEW_RATE_MINIMUM, AXIS4_ACCELERATION_TIME, AXIS4_RAPID_STOP_TIME, AXIS4_POWER_DOWN == ON, AXIS4_POWER_DOWN_TIME},
 #endif
 #if FOCUSER_MAX >= 2
-  {AXIS5_DRIVER_MODEL != OFF, AXIS5_SLEW_RATE_BASE_DESIRED, AXIS5_SLEW_RATE_MINIMUM, AXIS5_ACCELERATION_TIME, AXIS5_RAPID_STOP_TIME, AXIS5_POWER_DOWN == ON, AXIS5_POWER_DOWN_TIME},
+  {AXIS5_DRIVER_MODEL != OFF, AXIS5_HOME_DEFAULT, AXIS5_SLEW_RATE_BASE_DESIRED, AXIS5_SLEW_RATE_MINIMUM, AXIS5_ACCELERATION_TIME, AXIS5_RAPID_STOP_TIME, AXIS5_POWER_DOWN == ON, AXIS5_POWER_DOWN_TIME},
 #endif
 #if FOCUSER_MAX >= 3
-  {AXIS6_DRIVER_MODEL != OFF, AXIS6_SLEW_RATE_BASE_DESIRED, AXIS6_SLEW_RATE_MINIMUM, AXIS6_ACCELERATION_TIME, AXIS6_RAPID_STOP_TIME, AXIS6_POWER_DOWN == ON, AXIS6_POWER_DOWN_TIME},
+  {AXIS6_DRIVER_MODEL != OFF, AXIS6_HOME_DEFAULT, AXIS6_SLEW_RATE_BASE_DESIRED, AXIS6_SLEW_RATE_MINIMUM, AXIS6_ACCELERATION_TIME, AXIS6_RAPID_STOP_TIME, AXIS6_POWER_DOWN == ON, AXIS6_POWER_DOWN_TIME},
 #endif
 #if FOCUSER_MAX >= 4
-  {AXIS7_DRIVER_MODEL != OFF, AXIS7_SLEW_RATE_BASE_DESIRED, AXIS7_SLEW_RATE_MINIMUM, AXIS7_ACCELERATION_TIME, AXIS7_RAPID_STOP_TIME, AXIS7_POWER_DOWN == ON, AXIS7_POWER_DOWN_TIME},
+  {AXIS7_DRIVER_MODEL != OFF, AXIS7_HOME_DEFAULT, AXIS7_SLEW_RATE_BASE_DESIRED, AXIS7_SLEW_RATE_MINIMUM, AXIS7_ACCELERATION_TIME, AXIS7_RAPID_STOP_TIME, AXIS7_POWER_DOWN == ON, AXIS7_POWER_DOWN_TIME},
 #endif
 #if FOCUSER_MAX >= 5
-  {AXIS8_DRIVER_MODEL != OFF, AXIS8_SLEW_RATE_BASE_DESIRED, AXIS8_SLEW_RATE_MINIMUM, AXIS8_ACCELERATION_TIME, AXIS8_RAPID_STOP_TIME, AXIS8_POWER_DOWN == ON, AXIS8_POWER_DOWN_TIME},
+  {AXIS8_DRIVER_MODEL != OFF, AXIS8_HOME_DEFAULT, AXIS8_SLEW_RATE_BASE_DESIRED, AXIS8_SLEW_RATE_MINIMUM, AXIS8_ACCELERATION_TIME, AXIS8_RAPID_STOP_TIME, AXIS8_POWER_DOWN == ON, AXIS8_POWER_DOWN_TIME},
 #endif
 #if FOCUSER_MAX >= 6
-  {AXIS9_DRIVER_MODEL != OFF, AXIS9_SLEW_RATE_BASE_DESIRED, AXIS9_SLEW_RATE_MINIMUM, AXIS9_ACCELERATION_TIME, AXIS9_RAPID_STOP_TIME, AXIS9_POWER_DOWN == ON, AXIS9_POWER_DOWN_TIME},
+  {AXIS9_DRIVER_MODEL != OFF, AXIS9_HOME_DEFAULT, AXIS9_SLEW_RATE_BASE_DESIRED, AXIS9_SLEW_RATE_MINIMUM, AXIS9_ACCELERATION_TIME, AXIS9_RAPID_STOP_TIME, AXIS9_POWER_DOWN == ON, AXIS9_POWER_DOWN_TIME},
 #endif
 };
 
@@ -159,7 +160,7 @@ void Focuser::init() {
 
 void Focuser::begin() {
   for (int index = 0; index < FOCUSER_MAX; index++) {
-    if (configuration[index].present && axes[index] != NULL) axes[index]->calibrate();
+    if (configuration[index].present && axes[index] != NULL) axes[index]->calibrateDriver();
   }
 
   // start task for temperature compensated focusing
@@ -217,6 +218,7 @@ bool Focuser::setDcPower(int index, int value) {
 // get TCF enable
 bool Focuser::getTcfEnable(int index) {
   if (index < 0 || index >= FOCUSER_MAX) return false;
+  if (isnan(getTemperature())) setTcfEnable(index, false);
   return settings[index].tcf.enabled;
 }
 
@@ -225,6 +227,7 @@ CommandError Focuser::setTcfEnable(int index, bool value) {
   if (index < 0 || index >= FOCUSER_MAX) return CE_CMD_UNKNOWN;
   if (settings[index].parkState >= PS_PARKED) return CE_PARKED;
 
+  if (isnan(getTemperature())) value = false;
   settings[index].tcf.enabled = value;
   if (value) {
     settings[index].tcf.t0 = getTemperature();
@@ -279,6 +282,23 @@ bool Focuser::setTcfT0(int index, float value) {
   settings[index].tcf.t0 = value;
   writeSettings(index);
   return true;
+}
+
+// get home position in microns
+long Focuser::getHomePosition(int index) {
+  if (index < 0 || index >= FOCUSER_MAX) return 0;
+  
+  if (configuration[index].homeDefault >= 0 && configuration[index].homeDefault <= 500000) return configuration[index].homeDefault;
+  
+  switch (configuration[index].homeDefault) {
+    case MAXIMUM:
+      return lround(axes[index]->settings.limits.max);
+    case MIDDLE:
+      return lround((axes[index]->settings.limits.max + axes[index]->settings.limits.min)/2.0F);
+    case MINIMUM:
+    default:
+      return lround(axes[index]->settings.limits.min);
+  }
 }
 
 // get backlash in steps
@@ -351,11 +371,14 @@ CommandError Focuser::gotoTarget(int index, long target) {
   if (settings[index].parkState >= PS_PARKED) return CE_PARKED;
 
   VF("MSG: Focuser"); V(index + 1); VF(", goto target coordinate set ("); V(target/axes[index]->getStepsPerMeasure()); VLF("um)");
-  VF("MSG: Focuser"); V(index + 1); VLF(", starting goto");
+  VF("MSG: Focuser"); V(index + 1); VLF(", attempting goto");
 
   axes[index]->setFrequencyBase(0.0F);
   axes[index]->setTargetCoordinateSteps(target + tcfSteps[index]);
-  return axes[index]->autoGoto(settings[index].gotoRate);
+  CommandError e = axes[index]->autoGoto(settings[index].gotoRate);
+  if (e != CE_NONE) { VF("MSG: Focuser"); V(index + 1); VLF(", goto failed"); }
+
+  return e; 
 }
 
 // park focuser at its current location
@@ -527,12 +550,12 @@ void Focuser::monitor() {
       bool out = sense.isOn(outButtonHandle);
       if (in && out) { in = false; out = false; }
       if (in) {
-        if (FOCUSER_BUTTON_MOVE_RATE > 0) slewRate[FOCUSER_BUTTON_FOCUSER_INDEX - 1] = FOCUSER_BUTTON_MOVE_RATE;
-        slew(FOCUSER_BUTTON_FOCUSER_INDEX - 1, DIR_FORWARD);
+        if (FOCUSER_BUTTON_MOVE_RATE > 0) moveRate[FOCUSER_BUTTON_FOCUSER_INDEX - 1] = FOCUSER_BUTTON_MOVE_RATE;
+        move(FOCUSER_BUTTON_FOCUSER_INDEX - 1, DIR_FORWARD);
       } else
       if (out) {
-        if (FOCUSER_BUTTON_MOVE_RATE > 0) slewRate[FOCUSER_BUTTON_FOCUSER_INDEX - 1] = FOCUSER_BUTTON_MOVE_RATE;
-        slew(FOCUSER_BUTTON_FOCUSER_INDEX - 1, DIR_REVERSE);
+        if (FOCUSER_BUTTON_MOVE_RATE > 0) moveRate[FOCUSER_BUTTON_FOCUSER_INDEX - 1] = FOCUSER_BUTTON_MOVE_RATE;
+        move(FOCUSER_BUTTON_FOCUSER_INDEX - 1, DIR_REVERSE);
       } else
         axes[FOCUSER_BUTTON_FOCUSER_INDEX - 1]->autoSlewStop();
     }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "../../Common.h"
+#include "../sense/Sense.h"
 
 #ifdef MOTOR_PRESENT
 
@@ -25,7 +26,7 @@
 #endif
 #define FRACTIONAL_SEC_US           (lround(1000000.0F/FRACTIONAL_SEC))
 
-// time limit in seconds for slew home refine phases
+// time limit in seconds for slew home phases
 #ifndef SLEW_HOME_REFINE_TIME_LIMIT
 #define SLEW_HOME_REFINE_TIME_LIMIT 120
 #endif
@@ -116,7 +117,7 @@ class Axis {
     void enable(bool value);
 
     // get the enabled state
-    inline bool isEnabled() { return enabled; }
+    inline bool isEnabled() { return enabled && !motor->calibrating; }
 
     // time (in ms) before automatic power down at standstill, use 0 to disable
     void setPowerDownTime(int value);
@@ -219,13 +220,16 @@ class Axis {
     float getBacklashFrequency();
 
     // reverse direction of motion
-    void setReverse(bool reverse) {
+    inline void setReverse(bool reverse) {
       if (reverse) {
         if (settings.reverse == ON) motor->setReverse(OFF); else motor->setReverse(ON);
       } else {
         motor->setReverse(settings.reverse);
       }
     }
+
+    // reverse homing direction
+    inline void setHomeReverse(bool reverse) { sense.reverse(homeSenseHandle, reverse); }
 
     // set base movement frequency in "measures" (radians, microns, etc.) per second
     void setFrequencyBase(float frequency);
@@ -238,6 +242,9 @@ class Axis {
 
     // set maximum frequency in "measures" (radians, microns, etc.) per second
     void setFrequencyMax(float frequency);
+
+    // set frequency scaling factor (0.0 to 1.0)
+    void setFrequencyScale(float frequency) { if (frequency >= 0.0F && frequency <= 1.0F) scaleFreq = frequency; }
 
     // set acceleration rate in "measures" per second per second (for autoSlew)
     void setSlewAccelerationRate(float mpsps);
@@ -288,7 +295,7 @@ class Axis {
     inline bool getSynchronized() { return motor->getSynchronized(); }
 
     // report fault status of motor driver, if available
-    inline bool fault() { return motor->getDriverStatus().fault; };
+    inline bool motorFault() { return motor->getDriverStatus().fault; };
 
     // get associated motor driver status
     DriverStatus getStatus();
@@ -303,7 +310,10 @@ class Axis {
     bool motionErrorSensed(Direction direction);
 
     // calibrate the motor if required
-    void calibrate() { motor->calibrate(); }
+    void calibrate(float value) { motor->calibrate(value); }
+
+    // calibrate the motor driver if required
+    void calibrateDriver() { motor->calibrateDriver(); }
 
     // monitor movement
     void poll();
@@ -385,6 +395,7 @@ class Axis {
     float minFreq = 0.0F;
     float slewFreq = 0.0F;
     float maxFreq = 0.0F;
+    float scaleFreq = 1.0F;
     float backlashFreq = 0.0F;
 
     float targetTolerance = 0.0F;
